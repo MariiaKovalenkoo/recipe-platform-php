@@ -18,9 +18,10 @@ class UserController extends Controller
     public function login()
     {
 
+        try{
         $postedUser = $this->createObjectFromPostedJson("Models\\User");
 
-        $user = $this->service->checkUsernamePassword($postedUser->username, $postedUser->password);
+        $user = $this->service->checkUsernamePassword($postedUser->getUsername(), $postedUser->getPassword());
 
         if (!$user) {
             $this->respondWithError(401, "Invalid username or password");
@@ -29,6 +30,9 @@ class UserController extends Controller
 
         $tokenResponse = $this->generateJwt($user);
 
-        $this->respond($tokenResponse);
+        $this->respond($tokenResponse);}
+        catch(\Exception $e){
+            $this->respondWithError(500, $e->getMessage());
+        }
     }
 }

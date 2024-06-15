@@ -7,7 +7,7 @@ use Services\ProductService;
 
 class ProductController extends Controller
 {
-    private $service;
+    private ProductService $service;
 
     // initialize services
     function __construct()

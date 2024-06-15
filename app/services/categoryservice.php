@@ -5,7 +5,7 @@ use Repositories\CategoryRepository;
 
 class CategoryService {
 
-    private $repository;
+    private CategoryRepository $repository;
 
     function __construct()
     {
@@ -20,17 +20,16 @@ class CategoryService {
         return $this->repository->getOne($id);
     }
 
-    public function insert($item) {       
-        return $this->repository->insert($item);        
+    public function insert($item) {
+        return $this->repository->insert($item);
     }
 
-    public function update($item, $id) {       
-        return $this->repository->update($item, $id);        
+    public function update($item, $id) {
+        return $this->repository->update($item, $id);
     }
 
-    public function delete($item) {       
-        return $this->repository->delete($item);        
+    public function delete($item) {
+        return $this->repository->delete($item);
     }
 }
 
-?>

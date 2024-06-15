@@ -37,7 +37,10 @@ class Controller
             if (is_object($value)) {
                 continue;
             }
-            $object->{$key} = $value;
+            $methodName = 'set' . ucfirst($key);
+            if (method_exists($object, $methodName)) {
+                $object->$methodName($value);
+            }
         }
         return $object;
     }
@@ -52,9 +55,9 @@ class Controller
             "nbf" => $currentTime, // Or $currentTime + a shorter interval if necessary
             "exp" => $currentTime + 3600, // Reducing to 1 hour for better security
             "data" => array(
-                "id" => $user->id,
-                "username" => $user->username,
-                "email" => $user->email
+                "id" => $user->getId(),
+                "username" => $user->getUsername(),
+                "email" => $user->getEmail()
             )
         );
         $jwt = JWT::encode($payload, "fancy_key", 'HS256');
@@ -62,7 +65,7 @@ class Controller
         return array(
             "message" => 'Successful login',
             "token" => $jwt,
-            "username" => $user->username,
+            "username" => $user->getUsername(),
             "expiresAt" => $payload['exp']
         );
     }

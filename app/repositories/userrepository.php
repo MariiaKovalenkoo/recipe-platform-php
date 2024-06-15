@@ -20,13 +20,13 @@ class UserRepository extends Repository
             $user = $stmt->fetch();
 
             // verify if the password matches the hash in the database
-            $result = $this->verifyPassword($password, $user->password);
+            $result = $this->verifyPassword($password, $user->getPassword());
 
             if (!$result)
                 return false;
 
             // do not pass the password hash to the caller
-            $user->password = "";
+            $user->setPassword("");
 
             return $user;
         } catch (PDOException $e) {
