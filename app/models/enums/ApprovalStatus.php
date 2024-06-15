@@ -2,9 +2,9 @@
 
 namespace Models\enums;
 
-enum ApprovalStatus
+enum ApprovalStatus: string
 {
-    case PENDING;
-    case APPROVED;
-    case REJECTED;
+    case PENDING = 'Pending';
+    case APPROVED = 'Approved';
+    case REJECTED = 'Rejected';
 }

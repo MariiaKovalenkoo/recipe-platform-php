@@ -9,7 +9,6 @@ ini_set("display_errors", 1);
 require __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/jwt_middleware.php';
 
-// Create Router instance
 $router = new \Bramus\Router\Router();
 
 $router->setNamespace('Controllers');
@@ -21,6 +20,9 @@ $router->before('GET|POST|PUT|DELETE', '/categories.*', 'checkJwtMiddleware');
 
 // Define routes that do not require authentication
 $router->post('/users/login', 'UserController@login');
+$router->post('/users/register', 'UserController@register');
+$router->get('/recipes', 'RecipeController@getAll');
+
 
 // Define routes that require JWT authentication
 $router->mount('/products', function () use ($router) {

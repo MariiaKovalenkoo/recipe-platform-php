@@ -1,31 +1,25 @@
 <?php
 namespace Models;
 
-class User {
+class User implements \JsonSerializable{
 
     private int $id;
-    private string $username;
     private string $password;
     private string $firstName;
     private string $lastName;
     private string $email;
-
     private bool $isAdmin;
 
     public function getId(): int {
         return $this->id;
     }
 
+    public function setId(int $id): void {
+        $this->id = $id;
+    }
+
     public function getFullName(): string {
         return $this->firstName . ' ' . $this->lastName;
-    }
-
-    public function getUsername(): string {
-        return $this->username;
-    }
-
-    public function setUsername(string $username): void {
-        $this->username = $username;
     }
 
     public function getPassword(): string {
@@ -66,5 +60,15 @@ class User {
 
     public function setIsAdmin(bool $isAdmin): void {
         $this->isAdmin = $isAdmin;
+    }
+
+    public function jsonSerialize(): array {
+        return [
+            'id' => $this->id,
+            'firstName' => $this->firstName,
+            'lastName' => $this->lastName,
+            'email' => $this->email,
+            'isAdmin' => $this->isAdmin
+        ];
     }
 }

@@ -2,14 +2,13 @@
 
 namespace Models;
 
-class Comment
+class Comment implements \JsonSerializable
 {
     private int $id;
     private int $recipeId;
     private int $userId;
     private string $content;
-    private \DateTime $addedAt;
-
+    private \DateTime $commentedAt;
 
     public function getId(): int
     {
@@ -31,9 +30,9 @@ class Comment
         return $this->content;
     }
 
-    public function getAddedAt(): \DateTime
+    public function getCommentedAt(): \DateTime
     {
-        return $this->addedAt;
+        return $this->commentedAt;
     }
 
     public function setId(int $id): void
@@ -56,8 +55,13 @@ class Comment
         $this->content = $content;
     }
 
-    public function setAddedAt(\DateTime $addedAt): void
+    public function setCommentedAt(\DateTime $commentedAt): void
     {
-        $this->addedAt = $addedAt;
+        $this->commentedAt = $commentedAt;
+    }
+
+    public function jsonSerialize(): array
+    {
+        return get_object_vars($this);
     }
 }

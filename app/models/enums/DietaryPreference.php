@@ -2,11 +2,11 @@
 
 namespace Models\enums;
 
-enum DietaryPreference
+enum DietaryPreference : string
 {
-    case NOT_SPECIFIED;
-    case VEGETARIAN;
-    case VEGAN;
-    case GLUTEN_FREE;
-    case KETO;
+    case NOT_SPECIFIED = 'Not Specified';
+    case VEGETARIAN = 'Vegetarian';
+    case VEGAN = 'Vegan';
+    case GLUTEN_FREE = 'Gluten Free';
+    case KETO = 'Keto';
 }

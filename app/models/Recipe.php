@@ -3,20 +3,22 @@
 namespace Models;
 
 use Models\enums\ApprovalStatus;
+use Models\enums\CuisineType;
+use Models\enums\DietaryPreference;
+use Models\enums\MealType;
 
-class Recipe {
+class Recipe implements \JsonSerializable{
     private int $id ;
     private int $userId;
-    private string $recipeName;
+    private string $name;
     private bool $isPublic;
-    private string $mealType;
-    private string $dietaryPreference;
-    private string $cuisineType;
+    private MealType $mealType;
+    private DietaryPreference $dietaryPreference;
+    private CuisineType $cuisineType;
     private string $description;
     private string $ingredients;
     private string $instructions;
     private string $imgPath;
-
     private ApprovalStatus $status;
 
     public function getImgPath(): string {
@@ -39,8 +41,8 @@ class Recipe {
         return $this->userId;
     }
 
-    public function getRecipeName(): string {
-        return $this->recipeName;
+    public function getName(): string {
+        return $this->name;
     }
 
     public function getDescription(): string {
@@ -59,15 +61,15 @@ class Recipe {
         return $this->isPublic;
     }
 
-    public function getMealType(): string {
+    public function getMealType(): MealType {
         return $this->mealType;
     }
 
-    public function getDietaryPreference(): string {
+    public function getDietaryPreference(): DietaryPreference {
         return $this->dietaryPreference;
     }
 
-    public function getCuisineType(): string {
+    public function getCuisineType(): CuisineType {
         return $this->cuisineType;
     }
     public function setIsPublic(bool $isPublic): void {
@@ -75,20 +77,20 @@ class Recipe {
     }
 
     public function setMealType(string $mealType): void {
-        $this->mealType = $mealType;
+        $this->mealType = MealType::from($mealType);
     }
 
     public function setDietaryPreference(string $preference): void {
-        $this->dietaryPreference = $preference;
+        $this->dietaryPreference = DietaryPreference::from($preference);
     }
 
     public function setCuisineType(string $cuisine): void {
-        $this->cuisineType = $cuisine;
+        $this->cuisineType = CuisineType::from($cuisine);
     }
 
-    public function setRecipeName(string $recipeName): void
+    public function setName(string $name): void
     {
-        $this->recipeName = $recipeName;
+        $this->name = $name;
     }
 
     public function setDescription(string $description): void
@@ -115,7 +117,27 @@ class Recipe {
         return $this->status;
     }
 
-    public function setStatus(ApprovalStatus $status): void {
-        $this->status = $status;
+    public function setStatus(string $status): void {
+        $this->status = ApprovalStatus::from($status);
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            'id' => $this->id,
+            'userId' => $this->userId,
+            'name' => $this->name,
+            'isPublic' => $this->isPublic,
+            'mealType' => $this->mealType,
+            'dietaryPreference' => $this->dietaryPreference,
+            'cuisineType' => $this->cuisineType,
+            'description' => $this->description,
+            'ingredients' => $this->ingredients,
+            'instructions' => $this->instructions,
+            'imgPath' => $this->imgPath,
+            'status' => $this->status
+        ];
+
+        // return get_object_vars($this);
     }
 }

@@ -2,12 +2,12 @@
 
 namespace Models\enums;
 
-enum MealType
+enum MealType: string
 {
-    case BREAKFAST;
-    case LUNCH;
-    case DINNER;
-    case SNACK;
-    case DESSERT;
+    case BREAKFAST = 'Breakfast';
+    case LUNCH = 'Lunch';
+    case DINNER = 'Dinner';
+    case SNACK = 'Snack';
+    case DESSERT = 'Dessert';
 
 }
