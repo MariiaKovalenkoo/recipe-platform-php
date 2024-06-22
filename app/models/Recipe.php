@@ -120,6 +120,12 @@ class Recipe implements \JsonSerializable{
     public function setStatus(string $status): void {
         $this->status = ApprovalStatus::from($status);
     }
+    private function encodeImageToBase64($imagePath): string
+    {
+        $imagePath =  __DIR__ . '/../public/' . $imagePath;
+        $imageData = file_get_contents($imagePath);
+        return base64_encode($imageData);
+    }
 
     public function jsonSerialize(): array
     {
@@ -134,10 +140,9 @@ class Recipe implements \JsonSerializable{
             'description' => $this->description,
             'ingredients' => $this->ingredients,
             'instructions' => $this->instructions,
-            'imgPath' => $this->imgPath,
+            "image" => 'data:image/jpeg;base64,' . $this->encodeImageToBase64($this->imgPath),
             'status' => $this->status
         ];
-
         // return get_object_vars($this);
     }
 }
