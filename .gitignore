@@ -10,3 +10,5 @@
 .vscode/*
 !.vscode/extensions.json
 .idea/*
+
+app\error_log.log

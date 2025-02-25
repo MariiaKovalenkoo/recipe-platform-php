@@ -11,7 +11,6 @@ class UserRepository extends Repository
     function checkEmailPassword($email, $password)
     {
         try {
-            // retrieve the user with the given username
             $stmt = $this->connection->prepare("SELECT id, password, email, isAdmin FROM User WHERE email = :email");
             $stmt->bindParam(':email', $email);
             $stmt->execute();

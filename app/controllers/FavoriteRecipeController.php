@@ -2,7 +2,7 @@
 
 namespace Controllers;
 
-class FavoriteRecipeController
+class FavoriteRecipeController extends Controller
 {
 
 }

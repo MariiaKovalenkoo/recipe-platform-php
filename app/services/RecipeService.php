@@ -2,6 +2,7 @@
 
 namespace Services;
 
+use Models\enums\ApprovalStatus;
 use Models\Recipe;
 use Repositories\RecipeRepository;
 use Exception;

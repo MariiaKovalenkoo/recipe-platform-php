@@ -14,6 +14,7 @@ class RecipeController extends Controller
         $this->service = new RecipeService();
     }
 
+    // Get public recipes (approved only) - any user can access
     public function getPublicRecipes()
     {
         try {
@@ -22,9 +23,9 @@ class RecipeController extends Controller
 
             $status = 'Approved'; // only approved recipes are public
 
-            $mealType = isset($_GET['mealType']) && $_GET['mealType'] !== '' ? $_GET['mealType'] : null;
-            $cuisineType = isset($_GET['cuisineType']) && $_GET['cuisineType'] !== '' ? $_GET['cuisineType'] : null;
-            $dietaryPreference = isset($_GET['dietaryPreference']) && $_GET['dietaryPreference'] !== '' ? $_GET['dietaryPreference'] : null;
+            $mealType = $_GET['mealType'] ?? null;
+            $cuisineType = $_GET['cuisineType'] ?? null;
+            $dietaryPreference = $_GET['dietaryPreference'] ?? null;
 
             $result = $this->service->getPublicRecipes($page, $limit, $status, $mealType, $cuisineType, $dietaryPreference);
             $this->respondOk($result);
@@ -44,8 +45,9 @@ class RecipeController extends Controller
             $page = $_GET['page'] ?? 1;
             $limit = $_GET['limit'] ?? 10;
             $userId = $GLOBALS['current_user']->id;
-            $status = $_GET['status'] ?? null; // Get the status!
-            $mealType = $_GET['mealType'] ?? null;         // Get filter parameters
+
+            $status = $_GET['status'] ?? null;
+            $mealType = $_GET['mealType'] ?? null;
             $cuisineType = $_GET['cuisineType'] ?? null;
             $dietaryPreference = $_GET['dietaryPreference'] ?? null;
 
@@ -61,15 +63,20 @@ class RecipeController extends Controller
     public function getAllRecipes()
     {
         try {
-            if (!isset($GLOBALS['current_user']) || !isset($GLOBALS['current_user']->isAdmin) || !$GLOBALS['current_user']->isAdmin) {
-                $this->respondWithError(403, "Unauthorized. Admin access required.");
+            if (!isset($GLOBALS['current_user'])) {
+                $this->respondWithError(401, "Unauthorized: User not authenticated.");
+                return;
+            }
+            if (!isset($GLOBALS['current_user']->isAdmin) || !$GLOBALS['current_user']->isAdmin) {
+                $this->respondWithError(403, "Forbidden: Admin access required.");
                 return;
             }
 
             $page = $_GET['page'] ?? 1;
             $limit = $_GET['limit'] ?? 10;
+
             $status = $_GET['status'] ?? null;
-            $mealType = $_GET['mealType'] ?? null;         // Get filter parameters
+            $mealType = $_GET['mealType'] ?? null;
             $cuisineType = $_GET['cuisineType'] ?? null;
             $dietaryPreference = $_GET['dietaryPreference'] ?? null;
 
@@ -80,14 +87,19 @@ class RecipeController extends Controller
         }
     }
 
-    // Get a single recipe by ID
+    // Get a single recipe by ID - to see recipe details, you need to be logged in
     public function getRecipeById($id): void
     {
         try {
+            if (!isset($GLOBALS['current_user'])) {
+                $this->respondWithError(401, "Unauthorized: User not authenticated.");
+                return;
+            }
             $recipe = $this->service->getRecipeById($id);
 
-            if (!$recipe) {
-                $this->respondWithError(404, "Recipe not found.");
+            if ($recipe->getStatus()->value !== 'Public' && $recipe->getUserId() != $GLOBALS['current_user']->id && // Check ownership
+                $GLOBALS['current_user']->role !== 'admin') {  // admin check
+                $this->respondWithError(403, "Forbidden: You do not have permission to view this recipe.");
                 return;
             }
 
