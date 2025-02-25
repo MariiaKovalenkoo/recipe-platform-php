@@ -9,14 +9,14 @@ use \Firebase\JWT\Key;
 class Controller
 {
 
-    function respond($data)
+    function respondOk($data)
     {
         $this->respondWithCode(200, $data);
     }
 
     function respondWithError($httpcode, $message)
     {
-        $data = array('errorMessage' => $message);
+        $data = array('message' => $message);
         $this->respondWithCode($httpcode, $data);
     }
 
@@ -56,19 +56,16 @@ class Controller
             "exp" => $currentTime + 3600, // Reducing to 1 hour for better security
             "data" => array(
                 "id" => $user->getId(),
-                "username" => $user->getUsername(),
-                "email" => $user->getEmail()
+                "email" => $user->getEmail(),
+                "role" => $user->getIsAdmin() ? "admin" : "user",
             )
         );
-        $jwt = JWT::encode($payload, "fancy_key", 'HS256');
-
+        $jwt = JWT::encode($payload, "secret_key", 'HS256');
+        // change key
         return array(
             "message" => 'Successful login',
             "token" => $jwt,
-            "username" => $user->getUsername(),
             "expiresAt" => $payload['exp']
         );
     }
-
-
 }

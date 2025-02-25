@@ -13,33 +13,39 @@ $router = new \Bramus\Router\Router();
 
 $router->setNamespace('Controllers');
 
-// Define a group of routes that require JWT authentication
-$router->before('GET|POST|PUT|DELETE', '/products.*', 'checkJwtMiddleware');
-$router->before('GET|POST|PUT|DELETE', '/categories.*', 'checkJwtMiddleware');
-
-
 // Define routes that do not require authentication
 $router->post('/users/login', 'UserController@login');
 $router->post('/users/register', 'UserController@register');
-$router->get('/recipes', 'RecipeController@getAll');
+
+// Public recipes route (No JWT authentication required)
+$router->get('/public', 'RecipeController@getPublicRecipes');
+
+// All other /recipes routes (Requires JWT authentication)
+$router->before('GET|POST|PUT|DELETE', '/recipes.*', 'checkJwtMiddleware');
+
+$router->get('/recipes/mine', 'RecipeController@getUserRecipes');
+
+$router->get('/recipes/{id}', 'RecipeController@getRecipeById'); // View a single recipe
+$router->post('/recipes', 'RecipeController@createRecipe'); // Create a recipe
+$router->put('/recipes/{id}', 'RecipeController@updateRecipe'); // Update a recipe
+$router->delete('/recipes/{id}', 'RecipeController@deleteRecipe'); // Delete a recipe
 
 
-// Define routes that require JWT authentication
-$router->mount('/products', function () use ($router) {
-    $router->get('/', 'ProductController@getAll');
-    $router->get('/(\d+)', 'ProductController@getOne');
-    $router->post('/', 'ProductController@create');
-    $router->put('/(\d+)', 'ProductController@update');
-    $router->delete('/(\d+)', 'ProductController@delete');
-});
+// Require authentication for admin-only routes
+$router->before('GET|PUT', '/admin/recipes.*', 'checkJwtMiddleware');
 
-$router->mount('/categories', function () use ($router) {
-    $router->get('/', 'CategoryController@getAll');
-    $router->get('/(\d+)', 'CategoryController@getOne');
-    $router->post('/', 'CategoryController@create');
-    $router->put('/(\d+)', 'CategoryController@update');
-    $router->delete('/(\d+)', 'CategoryController@delete');
-});
+// Get all recipes (Admin only)
+$router->get('/admin/recipes', 'RecipeController@getAllRecipes');
+
+// Get recipes by status (Admin only)
+//$router->get('/admin/recipes/status/(\w+)', 'RecipeController@getRecipesByStatus');
+
+// Approve a recipe (Admin only)
+$router->put('/admin/recipes/(\d+)/approve', 'RecipeController@approveRecipe');
+
+// Reject a recipe (Admin only)
+$router->put('/admin/recipes/(\d+)/reject', 'RecipeController@rejectRecipe');
+
 
 // Run it!
 $router->run();

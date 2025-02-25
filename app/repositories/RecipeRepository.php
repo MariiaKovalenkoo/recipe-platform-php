@@ -2,38 +2,230 @@
 
 namespace Repositories;
 
+use Exception;
+use Models\enums\ApprovalStatus;
 use Models\Recipe;
 use PDO;
 use PDOException;
 
 class RecipeRepository extends Repository
 {
-    public function getAll($offset, $limit)
-    {
+    private function buildQuery(
+        ?int $userId = null,
+        ?string $status = null,
+        ?string $mealType = null,
+        ?string $cuisineType = null,
+        ?string $dietaryPreference = null
+    ): array {  // Returns [query, params]
+        $query = "SELECT * FROM Recipe WHERE 1=1"; // Base query
+        $countQuery = "SELECT COUNT(*) FROM Recipe WHERE 1=1"; // Base count query
+        $params = [];
+
+        if ($userId !== null) {
+            $query .= " AND userId = :userId";
+            $countQuery .= " AND userId = :userId";
+            $params[':userId'] = [$userId, PDO::PARAM_INT];
+        }
+        if ($status !== null) {
+            $query .= " AND status = :status";
+            $countQuery .= " AND status = :status";
+            $params[':status'] = [$status, PDO::PARAM_STR];
+        }
+        if ($mealType !== null) {
+            $query .= " AND mealType = :mealType";
+            $countQuery .= " AND mealType = :mealType";
+            $params[':mealType'] = [$mealType, PDO::PARAM_STR];
+        }
+        if ($cuisineType !== null) {
+            $query .= " AND cuisineType = :cuisineType";
+            $countQuery .= " AND cuisineType = :cuisineType";
+            $params[':cuisineType'] = [$cuisineType, PDO::PARAM_STR];
+        }
+        if ($dietaryPreference !== null) {
+            $query .= " AND dietaryPreference = :dietaryPreference";
+            $countQuery .= " AND dietaryPreference = :dietaryPreference";
+            $params[':dietaryPreference'] = [$dietaryPreference, PDO::PARAM_STR];
+        }
+
+        return [$query, $countQuery, $params];
+    }
+
+    public function getRecipes(
+        ?int $userId = null,
+        ?string $status = null,
+        ?string $mealType = null,
+        ?string $cuisineType = null,
+        ?string $dietaryPreference = null,
+        int $offset = 0,
+        int $limit = 10
+    ): array {  // Returns ['recipes' => [], 'total' => 0]
         try {
-            $query = "SELECT * FROM Recipe";
-//            if (isset($limit) && isset($offset)) {
-//                $query .= " LIMIT :limit OFFSET :offset ";
-//            }
+            [$query, $countQuery, $params] = $this->buildQuery($userId, $status, $mealType, $cuisineType, $dietaryPreference);
+
+            // Fetch total count (before LIMIT/OFFSET)
+            $countStmt = $this->connection->prepare($countQuery);
+            foreach ($params as $paramName => $paramValue) {
+                $countStmt->bindValue($paramName, $paramValue[0], $paramValue[1]);
+            }
+            $countStmt->execute();
+            $total = (int)$countStmt->fetchColumn();
+
+
+            // Fetch recipes (with LIMIT/OFFSET)
+            $query .= " LIMIT :limit OFFSET :offset";
+            $params[':limit'] = [$limit, PDO::PARAM_INT];
+            $params[':offset'] = [$offset, PDO::PARAM_INT];
+
             $stmt = $this->connection->prepare($query);
-//            if (isset($limit) && isset($offset)) {
-//                $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-//                $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-//            }
+            foreach ($params as $paramName => $paramValue) {
+                $stmt->bindValue($paramName, $paramValue[0], $paramValue[1]);
+            }
             $stmt->execute();
 
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $recipes = [];
 
-            $recipes = array();
-            while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
+            foreach ($rows as $row) {
                 $recipes[] = $this->rowToRecipe($row);
             }
 
-            return $recipes;
-        }
-        catch (PDOException $e) {
-            echo $e;
+            return [
+                'recipes' => $recipes,
+                'total' => $total,
+            ];
+
+        } catch (PDOException $e) {
+            error_log("Database error: " . $e->getMessage());
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
         }
     }
+
+    // Admin-specific helper (no sorting)
+    public function getAllRecipes(int $offset = 0, int $limit = 10, ?string $status = null, ?string $mealType = null, ?string $cuisineType = null, ?string $dietaryPreference = null): array {
+        return $this->getRecipes(null, $status, $mealType, $cuisineType, $dietaryPreference,  $offset, $limit);
+    }
+
+    // Public recipes
+    public function getPublicRecipes(int $offset = 0, int $limit = 10, string $status = null, ?string $mealType = null, ?string $cuisineType = null, ?string $dietaryPreference = null): array
+    {
+        return $this->getRecipes(null, $status, $mealType, $cuisineType, $dietaryPreference, $offset, $limit);
+    }
+
+    //User recipes
+    public function getUserRecipes(int $userId, int $offset = 0, int $limit = 10, ?string $status = null, ?string $mealType = null, ?string $cuisineType = null, ?string $dietaryPreference = null): array
+    {
+        return $this->getRecipes($userId, $status, $mealType, $cuisineType, $dietaryPreference, $offset, $limit);
+    }
+
+    // GET
+//    public function getAllRecipes(int $offset, int $limit)
+//    {
+//        try {
+//            $query = "SELECT * FROM Recipe LIMIT :limit OFFSET :offset";
+//            $stmt = $this->connection->prepare($query);
+//            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+//            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+//            $stmt->execute();
+//
+//            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+//            $recipes = [];
+//            foreach ($rows as $row) {
+//                $recipes[] = $this->rowToRecipe($row);
+//            }
+//            return $recipes;
+//        } catch (PDOException $e) {
+//            echo $e;
+//            return []; // Return an empty array or throw an exception
+//        }
+//    }
+//
+//    public function getRecipesByStatus(string $status, int $offset, int $limit)
+//    {
+//        try {
+//            $query = "SELECT * FROM Recipe WHERE status = :status LIMIT :limit OFFSET :offset";
+//            $stmt = $this->connection->prepare($query);
+//            $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+//            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+//            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+//            $stmt->execute();
+//
+//            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+//
+//            $recipes = [];
+//            foreach ($rows as $row) {
+//                $recipes[] = $this->rowToRecipe($row);
+//            }
+//
+//            return $recipes;
+//        }catch (PDOException $e){
+//            echo $e;
+//            return [];
+//        }
+//    }
+//
+//    // Get all public and approved recipes (Accessible to everyone)
+//    public function getPublicRecipes(int $offset, int $limit)
+//    {
+//        try {
+//            $query = "SELECT * FROM Recipe WHERE isPublic = TRUE AND status = 'Approved' LIMIT :limit OFFSET :offset";
+//            $stmt = $this->connection->prepare($query);
+//            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+//            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+//            $stmt->execute();
+//
+//            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+//            $recipes = [];
+//            foreach ($rows as $row) {
+//                $recipes[] = $this->rowToRecipe($row);
+//            }
+//            return $recipes;
+//        } catch (PDOException $e) {
+//            echo $e;
+//            return []; // Return an empty array or throw an exception
+//        }
+//    }
+//
+//    public function getUserRecipes(int $userId, int $offset, int $limit)
+//    {
+//        try{
+//            $query = "SELECT * FROM Recipe WHERE userId = :userId LIMIT :limit OFFSET :offset";
+//            $stmt = $this->connection->prepare($query);
+//            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+//            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+//            $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+//            $stmt->execute();
+//
+//            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+//
+//            $recipes = [];
+//            foreach ($rows as $row) {
+//                $recipes[] = $this->rowToRecipe($row);
+//            }
+//
+//            return $recipes;
+//        } catch (PDOException $e)
+//        {
+//            echo $e;
+//            return [];
+//        }
+//    }
+
+    public function getRecipeById(int $id): ?Recipe
+    {
+        try {
+            $stmt = $this->connection->prepare("SELECT * FROM Recipe WHERE id = :id");
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $this->rowToRecipe($row);
+        }
+        catch (PDOException $e) {
+            error_log("Database error: " . $e->getMessage());
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());        }
+    }
+
     private function rowToRecipe(mixed $row): Recipe
     {
         $recipe = new Recipe();
@@ -46,10 +238,68 @@ class RecipeRepository extends Repository
         $recipe->setDietaryPreference($row['dietaryPreference']);
         $recipe->setCuisineType($row['cuisineType']);
         $recipe->setDescription($row['description']);
-        $recipe->setIsPublic($row['isPublic']);
         $recipe->setStatus($row['status']);
         $recipe->setUserId($row['userId']);
         return $recipe;
     }
 
+    public function createRecipe(Recipe $recipe): bool
+    {
+        $stmt = $this->connection->prepare("
+        INSERT INTO Recipe (name, ingredients, instructions, imgPath, mealType, dietaryPreference, cuisineType, description, status, userId)
+        VALUES (:name, :ingredients, :instructions, :imgPath, :mealType, :dietaryPreference, :cuisineType, :description, :status, :userId)
+    ");
+
+        $stmt->bindValue(':name', $recipe->getName());
+        $stmt->bindValue(':ingredients', $recipe->getIngredients());
+        $stmt->bindValue(':instructions', $recipe->getInstructions());
+        $stmt->bindValue(':imgPath', $recipe->getImgPath());
+        $stmt->bindValue(':mealType', $recipe->getMealType()->value);
+        $stmt->bindValue(':dietaryPreference', $recipe->getDietaryPreference()->value);
+        $stmt->bindValue(':cuisineType', $recipe->getCuisineType()->value);
+        $stmt->bindValue(':description', $recipe->getDescription());
+        $stmt->bindValue(':status', $recipe->getStatus()->value);
+        $stmt->bindValue(':userId', $recipe->getUserId(), PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    public function updateRecipe(Recipe $recipe): bool
+    {
+        $stmt = $this->connection->prepare("
+        UPDATE Recipe
+        SET name = :name, ingredients = :ingredients, instructions = :instructions, imgPath = :imgPath, 
+            mealType = :mealType, dietaryPreference = :dietaryPreference, cuisineType = :cuisineType, 
+            description = :description, status = :status
+        WHERE id = :id
+    ");
+
+        $stmt->bindValue(':id', $recipe->getId(), PDO::PARAM_INT);
+        $stmt->bindValue(':name', $recipe->getName());
+        $stmt->bindValue(':ingredients', $recipe->getIngredients());
+        $stmt->bindValue(':instructions', $recipe->getInstructions());
+        $stmt->bindValue(':imgPath', $recipe->getImgPath());
+        $stmt->bindValue(':mealType', $recipe->getMealType()->value);
+        $stmt->bindValue(':dietaryPreference', $recipe->getDietaryPreference()->value);
+        $stmt->bindValue(':cuisineType', $recipe->getCuisineType()->value);
+        $stmt->bindValue(':description', $recipe->getDescription());
+        $stmt->bindValue(':status', $recipe->getStatus()->value);
+
+        return $stmt->execute();
+    }
+
+    public function deleteRecipe(int $id): bool
+    {
+        $stmt = $this->connection->prepare("DELETE FROM Recipe WHERE id = :id");
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    public function updateRecipeStatus(int $id, ApprovalStatus $status): bool
+    {
+        $stmt = $this->connection->prepare("UPDATE Recipe SET status = :status WHERE id = :id");
+        $stmt->bindValue(':status', $status->value);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

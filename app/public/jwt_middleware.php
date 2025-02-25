@@ -2,13 +2,15 @@
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
 
-function checkJwtMiddleware()
+function checkJwtMiddleware(): void
 {
     $headers = apache_request_headers();
-    // error_log(print_r($headers, true), 3, __DIR__ . '/../error_log.log'); // Log the input data
-    $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : null;
+    //error_log("Incoming Headers: " . print_r($headers, true), 3, __DIR__ . '/../error_log.log'); // Log headers
+
+    $authHeader = $headers['Authorization'] ?? null;
 
     if (!$authHeader) {
+        error_log("JWT Middleware Error: No Authorization header found", 3, __DIR__ . '/../error_log.log');
         http_response_code(401);
         echo json_encode(array("message" => "Access denied. No token provided."));
         exit;
@@ -16,24 +18,34 @@ function checkJwtMiddleware()
 
     list($jwt) = sscanf($authHeader, 'Bearer %s');
 
-    if ($jwt) {
-        try {
-            $secret_key = "secret_key";
+    if (!$jwt) {
+        error_log("JWT Middleware Error: Invalid token format", 3, __DIR__ . '/../error_log.log');
+        http_response_code(401);
+        echo json_encode(array("message" => "Access denied. Invalid token format."));
+        exit;
+    }
 
-            // Decode the JWT - assumes the JWT package from Firebase is being used
-            $decoded = JWT::decode($jwt, new Key($secret_key, 'HS256'));
+    try {
+        $secret_key = "secret_key";
+        $decoded = JWT::decode($jwt, new Key($secret_key, 'HS256'));
 
-            // The token is valid, you can add the decoded data to a global variable or pass it along if necessary
-            // For example:
-            $GLOBALS['current_user'] = $decoded->data;
-        } catch (Exception $e) {
+        if (!isset($decoded->data)) {
+            error_log("JWT Middleware Error: Decoded token has no 'data' field", 3, __DIR__ . '/../error_log.log');
             http_response_code(401);
-            echo json_encode(array("message" => "Access denied. " . $e->getMessage()));
+            echo json_encode(array("message" => "Access denied. Invalid token data."));
             exit;
         }
-    } else {
+
+        $GLOBALS['current_user'] = $decoded->data;
+
+        // Log decoded token and current user data
+        //error_log("Decoded Token: " . print_r($decoded, true), 3, __DIR__ . '/../error_log.log');
+        //error_log("JWT Middleware: User ID set to " . $GLOBALS['current_user']->id, 3, __DIR__ . '/../error_log.log');
+
+    } catch (Exception $e) {
+        error_log("JWT Middleware Error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         http_response_code(401);
-        echo json_encode(array("message" => "Access denied. Invalid token."));
+        echo json_encode(array("message" => "Access denied. " . $e->getMessage()));
         exit;
     }
 }

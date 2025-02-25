@@ -11,7 +11,6 @@ class Recipe implements \JsonSerializable{
     private int $id ;
     private int $userId;
     private string $name;
-    private bool $isPublic;
     private MealType $mealType;
     private DietaryPreference $dietaryPreference;
     private CuisineType $cuisineType;
@@ -57,10 +56,6 @@ class Recipe implements \JsonSerializable{
         return $this->instructions;
     }
 
-    public function getIsPublic(): bool {
-        return $this->isPublic;
-    }
-
     public function getMealType(): MealType {
         return $this->mealType;
     }
@@ -71,9 +66,6 @@ class Recipe implements \JsonSerializable{
 
     public function getCuisineType(): CuisineType {
         return $this->cuisineType;
-    }
-    public function setIsPublic(bool $isPublic): void {
-        $this->isPublic = $isPublic;
     }
 
     public function setMealType(string $mealType): void {
@@ -133,7 +125,6 @@ class Recipe implements \JsonSerializable{
             'id' => $this->id,
             'userId' => $this->userId,
             'name' => $this->name,
-            'isPublic' => $this->isPublic,
             'mealType' => $this->mealType,
             'dietaryPreference' => $this->dietaryPreference,
             'cuisineType' => $this->cuisineType,
