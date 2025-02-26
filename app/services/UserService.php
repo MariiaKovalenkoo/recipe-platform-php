@@ -1,7 +1,9 @@
 <?php
 namespace Services;
 
+use Models\User;
 use Repositories\UserRepository;
+use Exception;
 
 class UserService {
 
@@ -12,27 +14,23 @@ class UserService {
         $this->repository = new UserRepository();
     }
 
-    public function checkEmailPassword($email, $password) {
-        $user = $this->repository->checkEmailPassword($email, $password);
-
-        if(!$user)
-            return false;
+    public function authenticateUser($postedUser)
+    {
+        try {
+            $user = $this->repository->getUserByEmail($postedUser->getEmail());
+        } catch (Exception $e) {
+            throw new Exception("Invalid email or password");
+        }
 
         // verify if the password matches the hash in the database
-        $result = $this->verifyPassword($password, $user->getPassword());
+        $result = $this->verifyPassword($postedUser->getPassword(), $user->getPassword());
 
         if (!$result)
-            return false;
+            throw new Exception("Invalid email or password");
 
-        // do not pass the password hash to the caller
         $user->setPassword("");
 
         return $user;
-    }
-
-    public function getUserByEmail($email)
-    {
-        return $this->repository->getUserByEmail($email);
     }
 
     // verify the password hash
@@ -41,37 +39,16 @@ class UserService {
         return password_verify($input, $hash);
     }
 
-    public function createUser($user)
+    public function registerUser(User $postedUser): ?User
     {
-        return $this->repository->createUser($user);
+        $hashedPassword = password_hash($postedUser->getPassword(), PASSWORD_DEFAULT);
+        $postedUser->setPassword($hashedPassword);
+
+        return $this->repository->createUser($postedUser);
     }
 
-    // function checkUsernameExists($enteredUsername): bool {
-    //     return $this->repository->checkUsernameExists($enteredUsername);
-    // }
-
-    // public function getHashedPasswordByUsername($username): string
-    // {
-    //     return $this->repository->getHashedPasswordByUsername($username);
-    // }
-
-//    public function getUserById($userId): User
-//    {
-//        return $this->repository->getUserById($userId);
-//    }
-//
-//    public function getUserByUsername($username): User
-//    {
-//        return $this->repository->getUserByUsername($username);
-//    }
-//
-//    public function checkEmailExists($email) : bool
-//    {
-//        return $this->repository->checkEmailExists($email);
-//    }
-//
-//    public function createNewUser(User $user) : ?User
-//    {
-//        return $this->repository->createNewUser($user);
-//    }
+    public function getUserByEmail($email)
+    {
+        return $this->repository->getUserByEmail($email);
+    }
 }

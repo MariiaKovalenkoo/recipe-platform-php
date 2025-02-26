@@ -6,8 +6,9 @@ use Models\enums\ApprovalStatus;
 use Models\enums\CuisineType;
 use Models\enums\DietaryPreference;
 use Models\enums\MealType;
+use JsonSerializable;
 
-class Recipe implements \JsonSerializable{
+class Recipe implements JsonSerializable{
     private int $id ;
     private int $userId;
     private string $name;
@@ -134,6 +135,5 @@ class Recipe implements \JsonSerializable{
             "image" => 'data:image/jpeg;base64,' . $this->encodeImageToBase64($this->imgPath),
             'status' => $this->status
         ];
-        // return get_object_vars($this);
     }
 }

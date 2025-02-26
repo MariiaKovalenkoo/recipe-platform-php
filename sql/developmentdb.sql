@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS Recipe (
     cuisineType VARCHAR(50) DEFAULT 'Not Specified',
     userId INT NOT NULL,
     imgPath VARCHAR(100),
-    status VARCHAR(50) DEFAULT 'Pending',
+    status VARCHAR(50) DEFAULT 'Private',
 
     FOREIGN KEY (userId) REFERENCES User(id)
  );

@@ -2,6 +2,7 @@
 
 namespace Models;
 
+use DateTime;
 
 class FavoriteRecipe implements \JsonSerializable
 {
@@ -9,7 +10,7 @@ class FavoriteRecipe implements \JsonSerializable
     private int $userId;
     private int $recipeId;
     private Recipe $recipe;
-    private \DateTime $addedAt;
+    private DateTime $addedAt;
 
     public function getId(): int
     {
@@ -41,7 +42,7 @@ class FavoriteRecipe implements \JsonSerializable
         return $this->recipe;
     }
 
-    public function getAddedAt(): \DateTime
+    public function getAddedAt(): DateTime
     {
         return $this->addedAt;
     }
@@ -56,7 +57,7 @@ class FavoriteRecipe implements \JsonSerializable
         $this->recipe = $recipe;
     }
 
-    public function setAddedAt(\DateTime $addedAt): void
+    public function setAddedAt(DateTime $addedAt): void
     {
         $this->addedAt = $addedAt;
     }

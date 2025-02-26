@@ -13,14 +13,20 @@ class FavoriteService
         $this->favoriteRepository = new FavoriteRepository();
     }
 
-    public function addToFavorite($userId, $recipeId): bool
+    public function addFavorite($userId, $recipeId): bool
     {
-        return $this->favoriteRepository->addToFavorite($userId, $recipeId);
+        if($this->favoriteRepository->isFavorite($userId, $recipeId)) {
+            return false;
+        }
+        return $this->favoriteRepository->addFavorite($userId, $recipeId);
     }
 
-    public function removeFromFavorite($userId, $recipeId): bool
+    public function removeFavorite($userId, $recipeId): bool
     {
-        return $this->favoriteRepository->removeFromFavorite($userId, $recipeId);
+        if(!$this->favoriteRepository->isFavorite($userId, $recipeId)) {
+            return false;
+        }
+        return $this->favoriteRepository->removeFavorite($userId, $recipeId);
     }
 
     public function isFavorite($userId, $recipeId): bool

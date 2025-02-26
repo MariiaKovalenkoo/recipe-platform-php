@@ -15,7 +15,7 @@ class RecipeController extends Controller
     }
 
     // Get public recipes (approved only) - any user can access
-    public function getPublicRecipes()
+    public function getPublicRecipes(): void
     {
         try {
             $page = $_GET['page'] ?? 1;
@@ -35,7 +35,7 @@ class RecipeController extends Controller
     }
 
     // Get user recipes
-    public function getUserRecipes()
+    public function getUserRecipes(): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
@@ -60,7 +60,7 @@ class RecipeController extends Controller
     }
 
     // Get all recipes (Admin only)
-    public function getAllRecipes()
+    public function getAllRecipes(): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
@@ -110,7 +110,7 @@ class RecipeController extends Controller
     }
 
     // Create a new recipe
-    public function createRecipe()
+    public function createRecipe(): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
@@ -129,7 +129,7 @@ class RecipeController extends Controller
     }
 
     // Update a recipe
-    public function updateRecipe($id)
+    public function updateRecipe($id): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
@@ -148,7 +148,7 @@ class RecipeController extends Controller
     }
 
     // Delete a recipe
-    public function deleteRecipe($id)
+    public function deleteRecipe($id): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
@@ -164,7 +164,7 @@ class RecipeController extends Controller
     }
 
     // Approve a recipe (Admin only)
-    public function approveRecipe($id)
+    public function approveRecipe($id): void
     {
         try {
             if (!$GLOBALS['current_user'] || $GLOBALS['current_user']->role !== 'admin') {
@@ -180,7 +180,7 @@ class RecipeController extends Controller
     }
 
     // Reject a recipe (Admin only)
-    public function rejectRecipe($id)
+    public function rejectRecipe($id): void
     {
         try {
             if (!$GLOBALS['current_user'] || $GLOBALS['current_user']->role !== 'admin') {

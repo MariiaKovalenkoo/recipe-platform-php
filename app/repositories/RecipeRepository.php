@@ -40,8 +40,9 @@ class RecipeRepository extends Repository
             return $this->rowToRecipe($row);
         }
         catch (PDOException $e) {
-            error_log("Database error: " . $e->getMessage());
-            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());        }
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        }
     }
 
     // helper function to convert a row from the database to a Recipe object
@@ -108,7 +109,7 @@ class RecipeRepository extends Repository
             ];
 
         } catch (PDOException $e) {
-            error_log("Database error: " . $e->getMessage());
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
         }
     }
@@ -157,62 +158,83 @@ class RecipeRepository extends Repository
     // create, update and delete recipes
     public function createRecipe(Recipe $recipe): bool
     {
-        $stmt = $this->connection->prepare("
-        INSERT INTO Recipe (name, ingredients, instructions, imgPath, mealType, dietaryPreference, cuisineType, description, status, userId)
-        VALUES (:name, :ingredients, :instructions, :imgPath, :mealType, :dietaryPreference, :cuisineType, :description, :status, :userId)
-    ");
+        try {
+            $stmt = $this->connection->prepare("
+                INSERT INTO Recipe (name, ingredients, instructions, imgPath, mealType, dietaryPreference, cuisineType, description, status, userId)
+                VALUES (:name, :ingredients, :instructions, :imgPath, :mealType, :dietaryPreference, :cuisineType, :description, :status, :userId)");
 
-        $stmt->bindValue(':name', $recipe->getName());
-        $stmt->bindValue(':ingredients', $recipe->getIngredients());
-        $stmt->bindValue(':instructions', $recipe->getInstructions());
-        $stmt->bindValue(':imgPath', $recipe->getImgPath());
-        $stmt->bindValue(':mealType', $recipe->getMealType()->value);
-        $stmt->bindValue(':dietaryPreference', $recipe->getDietaryPreference()->value);
-        $stmt->bindValue(':cuisineType', $recipe->getCuisineType()->value);
-        $stmt->bindValue(':description', $recipe->getDescription());
-        $stmt->bindValue(':status', $recipe->getStatus()->value);
-        $stmt->bindValue(':userId', $recipe->getUserId(), PDO::PARAM_INT);
+            $stmt->bindValue(':name', $recipe->getName());
+            $stmt->bindValue(':ingredients', $recipe->getIngredients());
+            $stmt->bindValue(':instructions', $recipe->getInstructions());
+            $stmt->bindValue(':imgPath', $recipe->getImgPath());
+            $stmt->bindValue(':mealType', $recipe->getMealType()->value);
+            $stmt->bindValue(':dietaryPreference', $recipe->getDietaryPreference()->value);
+            $stmt->bindValue(':cuisineType', $recipe->getCuisineType()->value);
+            $stmt->bindValue(':description', $recipe->getDescription());
+            $stmt->bindValue(':status', $recipe->getStatus()->value);
+            $stmt->bindValue(':userId', $recipe->getUserId(), PDO::PARAM_INT);
 
-        return $stmt->execute();
+            return $stmt->execute();
+        }
+        catch(PDOException $e) {
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        }
     }
 
     public function updateRecipe(Recipe $recipe): bool
     {
-        $stmt = $this->connection->prepare("
-        UPDATE Recipe
-        SET name = :name, ingredients = :ingredients, instructions = :instructions, imgPath = :imgPath, 
-            mealType = :mealType, dietaryPreference = :dietaryPreference, cuisineType = :cuisineType, 
-            description = :description, status = :status
-        WHERE id = :id
-    ");
+        try {
+            $stmt = $this->connection->prepare("
+                UPDATE Recipe
+                SET name = :name, ingredients = :ingredients, instructions = :instructions, imgPath = :imgPath, 
+                mealType = :mealType, dietaryPreference = :dietaryPreference, cuisineType = :cuisineType, description = :description, status = :status
+                WHERE id = :id");
 
-        $stmt->bindValue(':id', $recipe->getId(), PDO::PARAM_INT);
-        $stmt->bindValue(':name', $recipe->getName());
-        $stmt->bindValue(':ingredients', $recipe->getIngredients());
-        $stmt->bindValue(':instructions', $recipe->getInstructions());
-        $stmt->bindValue(':imgPath', $recipe->getImgPath());
-        $stmt->bindValue(':mealType', $recipe->getMealType()->value);
-        $stmt->bindValue(':dietaryPreference', $recipe->getDietaryPreference()->value);
-        $stmt->bindValue(':cuisineType', $recipe->getCuisineType()->value);
-        $stmt->bindValue(':description', $recipe->getDescription());
-        $stmt->bindValue(':status', $recipe->getStatus()->value);
+            $stmt->bindValue(':id', $recipe->getId(), PDO::PARAM_INT);
+            $stmt->bindValue(':name', $recipe->getName());
+            $stmt->bindValue(':ingredients', $recipe->getIngredients());
+            $stmt->bindValue(':instructions', $recipe->getInstructions());
+            $stmt->bindValue(':imgPath', $recipe->getImgPath());
+            $stmt->bindValue(':mealType', $recipe->getMealType()->value);
+            $stmt->bindValue(':dietaryPreference', $recipe->getDietaryPreference()->value);
+            $stmt->bindValue(':cuisineType', $recipe->getCuisineType()->value);
+            $stmt->bindValue(':description', $recipe->getDescription());
+            $stmt->bindValue(':status', $recipe->getStatus()->value);
 
-        return $stmt->execute();
+            return $stmt->execute();
+        }
+        catch(PDOException $e) {
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        }
     }
 
     public function deleteRecipe(int $id): bool
     {
-        $stmt = $this->connection->prepare("DELETE FROM Recipe WHERE id = :id");
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        return $stmt->execute();
+        try {
+            $stmt = $this->connection->prepare("DELETE FROM Recipe WHERE id = :id");
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            return $stmt->execute();
+        }
+        catch(PDOException $e) {
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        }
     }
 
     // update recipe status (for admin)
     public function updateRecipeStatus(int $id, ApprovalStatus $status): bool
     {
-        $stmt = $this->connection->prepare("UPDATE Recipe SET status = :status WHERE id = :id");
-        $stmt->bindValue(':status', $status->value);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        return $stmt->execute();
+        try {
+            $stmt = $this->connection->prepare("UPDATE Recipe SET status = :status WHERE id = :id");
+            $stmt->bindValue(':status', $status->value);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            return $stmt->execute();
+        }
+        catch(PDOException $e) {
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        }
     }
 }
