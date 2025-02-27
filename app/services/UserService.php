@@ -16,11 +16,9 @@ class UserService {
 
     public function authenticateUser($postedUser)
     {
-        try {
-            $user = $this->repository->getUserByEmail($postedUser->getEmail());
-        } catch (Exception $e) {
+        $user = $this->repository->getUserByEmail($postedUser->getEmail());
+        if (!$user)
             throw new Exception("Invalid email or password");
-        }
 
         // verify if the password matches the hash in the database
         $result = $this->verifyPassword($postedUser->getPassword(), $user->getPassword());
@@ -43,11 +41,12 @@ class UserService {
     {
         $hashedPassword = password_hash($postedUser->getPassword(), PASSWORD_DEFAULT);
         $postedUser->setPassword($hashedPassword);
+        $postedUser->setIsAdmin(false);
 
         return $this->repository->createUser($postedUser);
     }
 
-    public function getUserByEmail($email)
+    public function getUserByEmail($email): User|bool
     {
         return $this->repository->getUserByEmail($email);
     }

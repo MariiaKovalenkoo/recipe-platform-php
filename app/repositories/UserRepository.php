@@ -9,7 +9,7 @@ use PDOException;
 
 class UserRepository extends Repository
 {
-    function getUserByEmail($email): ?User
+    function getUserByEmail($email): User|false
     {
         try {
             $stmt = $this->connection->prepare("SELECT * FROM User WHERE email = :email");
@@ -29,19 +29,26 @@ class UserRepository extends Repository
     public function createUser($user): ?User
     {
         try {
+
             $stmt = $this->connection->prepare("INSERT INTO User (email, password, firstName, lastName, isAdmin) 
                                                         VALUES (:email, :password, :firstName, :lastName, :isAdmin)");
 
-            $stmt->bindParam(':email', $user->getEmail());
-            $stmt->bindParam(':password', $user->getPassword());
-            $stmt->bindParam(':firstName', $user->getFirstName());
-            $stmt->bindParam(':lastName', $user->getLastName());
-            $stmt->bindValue(':isAdmin', false, PDO::PARAM_BOOL); // Default to regular user
+            $email = $user->getEmail();
+            $password = $user->getPassword();
+            $firstName = $user->getFirstName();
+            $lastName = $user->getLastName();
+            $isAdmin = $user->getIsAdmin();
+
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':password', $password);
+            $stmt->bindParam(':firstName', $firstName);
+            $stmt->bindParam(':lastName', $lastName);
+            $stmt->bindValue(':isAdmin', $isAdmin, PDO::PARAM_BOOL);
 
             $stmt->execute();
-            // Get the ID of the newly inserted user
-            $userId = $this->connection->lastInsertId();
-            return $this->getUserById($userId);
+            $user->setId((int)$this->connection->lastInsertId());
+            return $user;
+
         }
         catch(PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
@@ -54,7 +61,7 @@ class UserRepository extends Repository
     public function getUserById($userId): ?User
     {
         try {
-            $stmt = $this->connection->prepare("SELECT * FROM User WHERE userId = :userId");
+            $stmt = $this->connection->prepare("SELECT * FROM User WHERE id = :userId");
             $stmt->bindParam(':userId', $userId);
             $stmt->execute();
 

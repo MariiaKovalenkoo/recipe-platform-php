@@ -2,6 +2,10 @@
 
 namespace Controllers;
 
+use Models\enums\ApprovalStatus;
+use Models\enums\CuisineType;
+use Models\enums\DietaryPreference;
+use Models\enums\MealType;
 use Services\RecipeService;
 use Exception;
 
@@ -192,6 +196,27 @@ class RecipeController extends Controller
             $this->respondOk(["message" => "Recipe rejected successfully."]);
         } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
+        }
+    }
+
+    public function getFilters(): void
+    {
+        try {
+            $dietaryPreferences = array_map(fn($case) => $case->value, DietaryPreference::cases());
+            $mealTypes = array_map(fn($case) => $case->value, MealType::cases());
+            $cuisineTypes = array_map(fn($case) => $case->value, CuisineType::cases());
+            $status = array_map(fn($case) => $case->value, ApprovalStatus::cases());
+
+            $this->respondOk([
+                'dietaryPreferences' => $dietaryPreferences,
+                'mealTypes' => $mealTypes,
+                'cuisineTypes' => $cuisineTypes,
+                'status' => $status,
+            ]);
+        }
+        catch (Exception $e) {
+            $this->respondWithError(500, $e->getMessage());
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         }
     }
 }

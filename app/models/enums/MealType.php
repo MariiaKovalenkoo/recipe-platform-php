@@ -9,5 +9,4 @@ enum MealType: string
     case DINNER = 'Dinner';
     case SNACK = 'Snack';
     case DESSERT = 'Dessert';
-
 }
