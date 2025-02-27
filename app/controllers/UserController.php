@@ -79,9 +79,6 @@ class UserController extends Controller
             $createdUser = $this->service->registerUser($postedUser);
             $tokenResponse = $this->generateJwt($createdUser);
 
-            error_log("registered user: user registered", 3, __DIR__ . '/../error_log.log');
-
-
             $this->respondOk($tokenResponse);
         } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());

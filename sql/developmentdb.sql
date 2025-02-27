@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS User (
 INSERT INTO User (email, password, firstName, lastName, isAdmin)
 VALUES
     ('user@gmail.com', '$2y$10$DQlV0u9mFmtOWsOdxXX9H.4kgzEB3E8o97s.S.Pdy4klUAdBvtVh.', 'John', 'Doe', FALSE);
+    ('admin@gmail.com', '$2y$10$L8dygFCg4M8FHgn855TJw.x42IDmScbKJoDp7ES4OlWT6.4LPoU9e', 'Admin', 'User', TRUE);
 
 CREATE TABLE IF NOT EXISTS Recipe (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -4,7 +4,7 @@ use \Firebase\JWT\Key;
 
 function checkJwtMiddleware(): void
 {
-    $headers = apache_request_headers();
+    $headers = getallheaders();
     //error_log("Incoming Headers: " . print_r($headers, true), 3, __DIR__ . '/../error_log.log'); // Log headers
 
     $authHeader = $headers['Authorization'] ?? null;
@@ -36,10 +36,12 @@ function checkJwtMiddleware(): void
             exit;
         }
 
-        $GLOBALS['current_user'] = $decoded->data;
+        //$GLOBALS['current_user'] = $decoded->data;
+        $GLOBALS['current_user'] = (object) $decoded->data;
 
         // Log decoded token and current user data
         //error_log("Decoded Token: " . print_r($decoded, true), 3, __DIR__ . '/../error_log.log');
+        //error_log("Current User: " . print_r($GLOBALS['current_user'], true), 3, __DIR__ . '/../error_log.log');
         //error_log("JWT Middleware: User ID set to " . $GLOBALS['current_user']->id, 3, __DIR__ . '/../error_log.log');
 
     } catch (Exception $e) {

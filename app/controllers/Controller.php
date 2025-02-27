@@ -61,7 +61,6 @@ class Controller
             )
         );
         $jwt = JWT::encode($payload, "secret_key", 'HS256');
-        // change key
         return array(
             "message" => 'Successful login',
             "token" => $jwt,

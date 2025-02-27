@@ -67,11 +67,13 @@ class RecipeController extends Controller
     public function getAllRecipes(): void
     {
         try {
+            error_log("Current User: " . print_r($GLOBALS['current_user'], true), 3, __DIR__ . '/../error_log.log');
+
             if (!isset($GLOBALS['current_user'])) {
                 $this->respondWithError(401, "Unauthorized: User not authenticated.");
                 return;
             }
-            if (!isset($GLOBALS['current_user']->isAdmin) || !$GLOBALS['current_user']->isAdmin) {
+            if ($GLOBALS['current_user']->role !== 'admin') {
                 $this->respondWithError(403, "Forbidden: Admin access required.");
                 return;
             }
