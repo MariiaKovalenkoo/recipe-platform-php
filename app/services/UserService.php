@@ -1,9 +1,11 @@
 <?php
 namespace Services;
 
+use Exception;
 use Models\User;
 use Repositories\UserRepository;
-use Exception;
+use Services\exceptions\BadRequestException;
+use Services\exceptions\UnauthorizedException;
 
 class UserService {
 
@@ -14,40 +16,73 @@ class UserService {
         $this->repository = new UserRepository();
     }
 
-    public function authenticateUser($postedUser)
+    public function authenticateUser($postedUser): User
     {
+        if (empty($postedUser->getEmail())) {
+            throw new BadRequestException("Email is required.");
+        }
+
+        if (empty($postedUser->getPassword())) {
+            throw new BadRequestException("Password is required.");
+        }
+
         $user = $this->repository->getUserByEmail($postedUser->getEmail());
         if (!$user)
-            throw new Exception("Invalid email or password");
+            throw new UnauthorizedException("Invalid email.");
 
-        // verify if the password matches the hash in the database
-        $result = $this->verifyPassword($postedUser->getPassword(), $user->getPassword());
-
-        if (!$result)
-            throw new Exception("Invalid email or password");
+        $isPasswordValid = $this->verifyPassword($postedUser->getPassword(), $user->getPassword());
+        if (!$isPasswordValid)
+            throw new UnauthorizedException("Invalid password.");
 
         $user->setPassword("");
 
         return $user;
     }
 
-    // verify the password hash
+    public function registerUser(User $postedUser): ?User
+    {
+        if (empty($postedUser->getEmail())) {
+            throw new BadRequestException("Email is required.");
+        }
+
+        if (empty($postedUser->getPassword())) {
+            throw new BadRequestException("Password is required.");
+        }
+
+        if ($this->repository->getUserByEmail($postedUser->getEmail())) {
+            throw new BadRequestException("Email is already in use.");
+        }
+
+        if (strlen($postedUser->getPassword()) < 8) {
+            throw new BadRequestException("Password must be at least 8 characters long.");
+        }
+
+        if (empty($postedUser->getFirstName())) {
+            throw new BadRequestException("First name is required.");
+        }
+
+        if (empty($postedUser->getLastName())) {
+            throw new BadRequestException("Last name is required.");
+        }
+
+        $hashedPassword = $this->hashPassword($postedUser->getPassword());
+        $postedUser->setPassword($hashedPassword);
+        $postedUser->setIsAdmin(false);
+
+        $newUser = $this->repository->createUser($postedUser);
+        if (!$newUser) {
+            throw new Exception("An error occurred while registering the user.");
+        }
+        return $newUser;
+    }
+
     private function verifyPassword($input, $hash): bool
     {
         return password_verify($input, $hash);
     }
 
-    public function registerUser(User $postedUser): ?User
+    private function hashPassword($password): string
     {
-        $hashedPassword = password_hash($postedUser->getPassword(), PASSWORD_DEFAULT);
-        $postedUser->setPassword($hashedPassword);
-        $postedUser->setIsAdmin(false);
-
-        return $this->repository->createUser($postedUser);
-    }
-
-    public function getUserByEmail($email): User|bool
-    {
-        return $this->repository->getUserByEmail($email);
+        return password_hash($password, PASSWORD_DEFAULT);
     }
 }

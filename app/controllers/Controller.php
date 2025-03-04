@@ -14,6 +14,21 @@ class Controller
         $this->respondWithCode(200, $data);
     }
 
+    function respondCreated($data)
+    {
+        $this->respondWithCode(201, $data);
+    }
+
+    function respondAccepted($data)
+    {
+        $this->respondWithCode(202, $data);
+    }
+
+    function respondNoContent()
+    {
+        $this->respondWithCode(204, null);
+    }
+
     function respondWithError($httpcode, $message)
     {
         $data = array('message' => $message);

@@ -73,12 +73,12 @@ class Recipe implements JsonSerializable{
         $this->mealType = MealType::from($mealType);
     }
 
-    public function setDietaryPreference(string $preference): void {
-        $this->dietaryPreference = DietaryPreference::from($preference);
+    public function setDietaryPreference(?string $preference): void {
+        $this->dietaryPreference = DietaryPreference::from($preference ?: DietaryPreference::NOT_SPECIFIED->value);
     }
 
-    public function setCuisineType(string $cuisine): void {
-        $this->cuisineType = CuisineType::from($cuisine);
+    public function setCuisineType(?string $cuisine): void {
+        $this->cuisineType = CuisineType::from($cuisine ?: CuisineType::NOT_SPECIFIED->value);
     }
 
     public function setName(string $name): void

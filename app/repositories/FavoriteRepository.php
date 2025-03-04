@@ -20,6 +20,8 @@ class FavoriteRepository extends Repository
         } catch(PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        } catch (Exception $e) {
+            throw $e;
         }
     }
 
@@ -36,6 +38,8 @@ class FavoriteRepository extends Repository
         } catch(PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        } catch (Exception $e) {
+            throw $e;
         }
     }
 
@@ -52,24 +56,34 @@ class FavoriteRepository extends Repository
         } catch(PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        } catch (Exception $e) {
+            throw $e;
         }
     }
     public function getFavoritesByUser($userId): array
     {
-        $stmt = $this->connection->prepare("SELECT uf.*, r.recipeId, recipeName, description, ingredients, 
-                                                instructions, mealType, dietaryPreference, cuisineType, imgPath
-                                                FROM UserFavorite uf JOIN Recipe r ON uf.recipeId = r.recipeId WHERE uf.userId = :userId");
+        try {
+            $stmt = $this->connection->prepare("SELECT uf.*, r.recipeId, recipeName, description, ingredients, 
+                                                    instructions, mealType, dietaryPreference, cuisineType, imgPath
+                                                    FROM UserFavorite uf JOIN Recipe r ON uf.recipeId = r.recipeId WHERE uf.userId = :userId");
 
-        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
-        $stmt->execute();
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
 
-        $favData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $favData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $favorites = [];
-        foreach ($favData as $data) {
-            $favorites[] = $this->rowToFavoriteRecipe($data);
+            $favorites = [];
+            foreach ($favData as $data) {
+                $favorites[] = $this->rowToFavoriteRecipe($data);
+            }
+            return $favorites;
         }
-        return $favorites;
+        catch(PDOException $e) {
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        } catch (Exception $e) {
+            throw $e;
+        }
     }
 
     // Helper function to convert a database row to a FavoriteRecipe object

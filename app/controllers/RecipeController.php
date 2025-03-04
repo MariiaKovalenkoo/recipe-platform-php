@@ -6,6 +6,9 @@ use Models\enums\ApprovalStatus;
 use Models\enums\CuisineType;
 use Models\enums\DietaryPreference;
 use Models\enums\MealType;
+use Services\exceptions\AccessDeniedException;
+use Services\exceptions\BadRequestException;
+use Services\exceptions\NotFoundException;
 use Services\RecipeService;
 use Exception;
 
@@ -43,7 +46,7 @@ class RecipeController extends Controller
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
-                $this->respondWithError(401, "Unauthorized.");
+                $this->respondWithError(401, "Please log in to view your recipes.");
                 return;
             }
             $page = $_GET['page'] ?? 1;
@@ -58,7 +61,8 @@ class RecipeController extends Controller
             $result = $this->service->getUserRecipes($userId, $page, $limit, $status, $mealType, $cuisineType, $dietaryPreference);
 
             $this->respondOk($result);
-        } catch (Exception $e) {
+        }
+        catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -88,7 +92,8 @@ class RecipeController extends Controller
 
             $result = $this->service->getAllRecipes($page, $limit, $status, $mealType, $cuisineType, $dietaryPreference);
             $this->respondOk($result);
-        } catch(Exception $e){
+        }
+        catch(Exception $e){
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -98,19 +103,20 @@ class RecipeController extends Controller
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
-                $this->respondWithError(401, "Unauthorized: User not authenticated.");
+                $this->respondWithError(401, "Unauthorized: Please log in to view the full recipe.");
                 return;
             }
-            $recipe = $this->service->getRecipeById($id);
-
-            if ($recipe->getStatus()->value !== 'Public' && $recipe->getUserId() != $GLOBALS['current_user']->id && // Check ownership
-                $GLOBALS['current_user']->role !== 'admin') {  // admin check
-                $this->respondWithError(403, "Forbidden: You do not have permission to view this recipe.");
-                return;
-            }
+            $recipe = $this->service->getRecipeById($id, $GLOBALS['current_user']->id, $GLOBALS['current_user']->role);
 
             $this->respondOk($recipe);
-        } catch (Exception $e) {
+        }
+        catch (NotFoundException $e) {
+            $this->respondWithError(404, $e->getMessage());
+        }
+        catch (AccessDeniedException $e) {
+            $this->respondWithError(403, $e->getMessage());
+        }
+        catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -120,16 +126,23 @@ class RecipeController extends Controller
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
-                $this->respondWithError(401, "Unauthorized.");
+                $this->respondWithError(401, "Unauthorized: Please log in to create a recipe.");
                 return;
             }
 
             $postedRecipe = $this->createObjectFromPostedJson("Models\\Recipe");
             $postedRecipe->setUserId($GLOBALS['current_user']->id);
 
-            $this->service->createRecipe($postedRecipe);
-            $this->respondOk(["message" => "Recipe created successfully"]);
-        } catch (Exception $e) {
+            $recipeId = $this->service->createRecipe($postedRecipe, $GLOBALS['current_user']->role);
+            $this->respondCreated([
+                "message" => "Recipe created successfully",
+                "id" => $recipeId
+            ]);
+        }
+        catch (BadRequestException $e) {
+            $this->respondWithError(400, $e->getMessage());
+        }
+        catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -146,9 +159,26 @@ class RecipeController extends Controller
             $postedRecipe = $this->createObjectFromPostedJson("Models\\Recipe");
             $postedRecipe->setId($id);
 
-            $this->service->updateRecipe($postedRecipe, $GLOBALS['current_user']->id);
-            $this->respondOk(["message" => "Recipe updated successfully"]);
-        } catch (Exception $e) {
+            if($this->service->updateRecipe($postedRecipe, $GLOBALS['current_user']->id, $GLOBALS['current_user']->role))
+            {
+                $this->respondOk([
+                    "message" => "Recipe updated successfully",
+                    "id" => $id
+                ]);
+            } else {
+                $this->respondWithError(500, "Failed to update recipe.");
+            }
+        }
+        catch (NotFoundException $e) {
+            $this->respondWithError(404, $e->getMessage());
+        }
+        catch (AccessDeniedException $e) {
+            $this->respondWithError(403, $e->getMessage());
+        }
+        catch (BadRequestException $e) {
+            $this->respondWithError(400, $e->getMessage());
+        }
+        catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -158,13 +188,22 @@ class RecipeController extends Controller
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
-                $this->respondWithError(401, "Unauthorized.");
+                $this->respondWithError(401, "Unauthorized. Please log in to delete a recipe.");
                 return;
             }
 
-            $this->service->deleteRecipe($id, $GLOBALS['current_user']->id);
-            $this->respondOk(["message" => "Recipe deleted successfully"]);
-        } catch (Exception $e) {
+            if($this->service->deleteRecipe($id, $GLOBALS['current_user']->id, $GLOBALS['current_user']->role))
+                $this->respondNoContent(["message" => "Recipe deleted successfully"]);
+            else
+                $this->respondWithError(500, "Failed to delete recipe.");
+        }
+        catch (NotFoundException $e) {
+            $this->respondWithError(404, $e->getMessage());
+        }
+        catch (AccessDeniedException $e) {
+            $this->respondWithError(403, $e->getMessage());
+        }
+        catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -173,14 +212,22 @@ class RecipeController extends Controller
     public function approveRecipe($id): void
     {
         try {
+            if (!isset($GLOBALS['current_user'])) {
+                $this->respondWithError(401, "Unauthorized. Please log in.");
+                return;
+            }
             if (!$GLOBALS['current_user'] || $GLOBALS['current_user']->role !== 'admin') {
                 $this->respondWithError(403, "Unauthorized. Admin access required.");
                 return;
             }
 
-            $this->service->approveRecipe($id, $GLOBALS['current_user']->id);
+            $this->service->approveRecipe($id);
             $this->respondOk(["message" => "Recipe approved successfully."]);
-        } catch (Exception $e) {
+        }
+        catch (NotFoundException $e) {
+            $this->respondWithError(404, $e->getMessage());
+        }
+        catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -189,14 +236,22 @@ class RecipeController extends Controller
     public function rejectRecipe($id): void
     {
         try {
+            if (!isset($GLOBALS['current_user'])) {
+                $this->respondWithError(401, "Unauthorized. Please log in.");
+                return;
+            }
             if (!$GLOBALS['current_user'] || $GLOBALS['current_user']->role !== 'admin') {
                 $this->respondWithError(403, "Unauthorized. Admin access required.");
                 return;
             }
 
-            $this->service->rejectRecipe($id, $GLOBALS['current_user']->id);
+            $this->service->rejectRecipe($id);
             $this->respondOk(["message" => "Recipe rejected successfully."]);
-        } catch (Exception $e) {
+        }
+        catch (NotFoundException $e) {
+            $this->respondWithError(404, $e->getMessage());
+        }
+        catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -218,7 +273,7 @@ class RecipeController extends Controller
         }
         catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
-            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            error_log("Error fetching filters: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         }
     }
 }
