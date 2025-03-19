@@ -2,6 +2,7 @@
 namespace Services;
 
 use Exception;
+use Firebase\JWT\JWT;
 use Models\User;
 use Repositories\UserRepository;
 use Services\exceptions\BadRequestException;
@@ -84,5 +85,52 @@ class UserService {
     private function hashPassword($password): string
     {
         return password_hash($password, PASSWORD_DEFAULT);
+    }
+
+    function generateJwt($user)
+    {
+        $refreshToken = bin2hex(random_bytes(32));
+        $result = $this->repository->updateRefreshToken($user, $refreshToken);
+
+        if (!$result) {
+            return false;
+        }
+
+        $currentTime = time();
+        $payload = array(
+            "iss" => "localhost",
+            "aud" => "localhost",
+            "iat" => $currentTime,
+            "nbf" => $currentTime, // Or $currentTime + a shorter interval if necessary
+            "exp" => $currentTime + 10, // Reducing to 1 hour for better security
+            "data" => array(
+                "id" => $user->getId(),
+                "email" => $user->getEmail(),
+                "role" => $user->getIsAdmin() ? "admin" : "user",
+                "refreshToken" => $refreshToken
+            )
+        );
+        return JWT::encode($payload, "secret_key", 'HS256');
+    }
+
+    function refreshJWT($userId, $refreshToken): string
+    {
+        try {
+            $user = $this->repository->getUserById($userId);
+
+            if ($refreshToken !== $user->getRefreshToken()) {
+                error_log("Refresh Token Error: Invalid refresh token", 3, __DIR__ . '/../error_log.log');
+                http_response_code(401);
+                echo json_encode(array("message" => "Access denied. Invalid refresh token."));
+                exit;
+            }
+
+            return $this->generateJwt($user);
+        } catch (Exception $e) {
+            error_log("Refresh Token Error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            http_response_code(401);
+            echo json_encode(array("message" => "Access denied. " . $e->getMessage()));
+            exit;
+        }
     }
 }

@@ -9,6 +9,7 @@ class User implements \JsonSerializable{
     private string $lastName;
     private string $email;
     private bool $isAdmin;
+    private string $refreshToken;
 
     public function getId(): int {
         return $this->id;
@@ -32,6 +33,10 @@ class User implements \JsonSerializable{
 
     public function getFirstName(): string {
         return $this->firstName;
+    }
+
+    public function getRefreshToken(): string {
+        return $this->refreshToken;
     }
 
     public function setFirstName(string $firstName): void {
@@ -62,13 +67,18 @@ class User implements \JsonSerializable{
         $this->isAdmin = $isAdmin;
     }
 
+    public function setRefreshToken(string $refreshToken): void {
+        $this->refreshToken = $refreshToken;
+    }
+
     public function jsonSerialize(): array {
         return [
             'id' => $this->id,
             'firstName' => $this->firstName,
             'lastName' => $this->lastName,
             'email' => $this->email,
-            'isAdmin' => $this->isAdmin
+            'isAdmin' => $this->isAdmin,
+            'refreshToken' => $this->refreshToken
         ];
     }
 }

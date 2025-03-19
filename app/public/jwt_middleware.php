@@ -1,6 +1,8 @@
 <?php
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
+use Firebase\JWT\ExpiredException;
+use Services\UserService;
 
 function checkJwtMiddleware(): void
 {
@@ -38,11 +40,31 @@ function checkJwtMiddleware(): void
 
         //$GLOBALS['current_user'] = $decoded->data;
         $GLOBALS['current_user'] = (object) $decoded->data;
+        $GLOBALS['jwt'] = $jwt;
 
         // Log decoded token and current user data
         //error_log("Decoded Token: " . print_r($decoded, true), 3, __DIR__ . '/../error_log.log');
         //error_log("Current User: " . print_r($GLOBALS['current_user'], true), 3, __DIR__ . '/../error_log.log');
         //error_log("JWT Middleware: User ID set to " . $GLOBALS['current_user']->id, 3, __DIR__ . '/../error_log.log');
+
+    }
+    catch (ExpiredException $e) {
+        # renew token
+        list($header, $payload, $signature) = explode(".", $jwt);
+        $decoded = json_decode(base64_decode($payload));
+        $userId = $decoded->data->id;
+
+        $userService = new UserService();
+        $newJWT = $userService->refreshJWT($userId, $decoded->data->refreshToken);
+
+        if (!$newJWT) {
+            error_log("JWT Middleware Error: Failed to refresh token", 3, __DIR__ . '/../error_log.log');
+            http_response_code(401);
+            echo json_encode(array("message" => "Access denied. Failed to refresh token."));
+            exit;
+        }
+
+        $GLOBALS['jwt'] = $newJWT;
 
     } catch (Exception $e) {
         error_log("JWT Middleware Error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
@@ -51,5 +73,4 @@ function checkJwtMiddleware(): void
         exit;
     }
 }
-
 

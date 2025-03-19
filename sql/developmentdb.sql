@@ -8,12 +8,13 @@ CREATE TABLE IF NOT EXISTS User (
     firstName VARCHAR(50),
     lastName VARCHAR(50),
     email VARCHAR(100) UNIQUE,
-    isAdmin BOOLEAN DEFAULT FALSE
+    isAdmin BOOLEAN DEFAULT FALSE,
+    refreshToken VARCHAR(64)
     );
 
 INSERT INTO User (email, password, firstName, lastName, isAdmin)
 VALUES
-    ('user@gmail.com', '$2y$10$DQlV0u9mFmtOWsOdxXX9H.4kgzEB3E8o97s.S.Pdy4klUAdBvtVh.', 'John', 'Doe', FALSE);
+    ('user@gmail.com', '$2y$10$DQlV0u9mFmtOWsOdxXX9H.4kgzEB3E8o97s.S.Pdy4klUAdBvtVh.', 'John', 'Doe', FALSE),
     ('admin@gmail.com', '$2y$10$L8dygFCg4M8FHgn855TJw.x42IDmScbKJoDp7ES4OlWT6.4LPoU9e', 'Admin', 'User', TRUE);
 
 CREATE TABLE IF NOT EXISTS Recipe (
@@ -44,7 +45,7 @@ VALUES
     ('Berry Smoothie', 'Mixed berries, yogurt, banana, honey', 'Refreshing and nutritious smoothie', '1. Blend mixed berries, yogurt, banana, and honey until smooth. 2. Enjoy!', 'Breakfast', 'Vegetarian', 'Not Specified', 1, '/img/recipes/smoothie.jpg', 'Approved');
 
 
-INSERT INTO Recipe (`name`, ingredients, description, instructions, isPublic, mealType, dietaryPreference, cuisineType, userId, imgPath, status)
+INSERT INTO Recipe (`name`, ingredients, description, instructions, mealType, dietaryPreference, cuisineType, userId, imgPath, status)
 VALUES
     ('Quinoa Salad', 'Quinoa, cucumbers, tomatoes, feta cheese, olives, lemon vinaigrette', 'Healthy and refreshing salad with a tangy dressing', '1. Cook quinoa. 2. Chop vegetables. 3. Mix all ingredients with lemon vinaigrette.', 'Lunch', 'Vegetarian', 'Italian', 1, '/img/recipes/quinoa-salad.jpg', 'Pending'),
     ('Banana Bread', 'Bananas, flour, sugar, eggs, butter, baking soda', 'Moist and delicious bread made with overripe bananas', '1. Mash bananas. 2. Mix with melted butter. 3. Blend in eggs, flour, and sugar. 4. Bake.', 'Dessert', 'Vegetarian', 'Not Specified', 1, '/img/recipes/banana-bread.jpg', 'Pending'),

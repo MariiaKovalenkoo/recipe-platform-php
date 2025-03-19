@@ -79,4 +79,22 @@ class UserRepository extends Repository
             throw $e;
         }
     }
+
+    public function updateRefreshToken($user, $refreshToken): bool
+    {
+        try {
+            $stmt = $this->connection->prepare("UPDATE User SET refreshToken = :refreshToken WHERE id = :userId");
+
+            $userId = $user->getId();
+
+            $stmt->bindParam(':refreshToken', $refreshToken);
+            $stmt->bindParam(':userId', $userId);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
+            throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
 }

@@ -23,7 +23,12 @@ class UserController extends Controller
 
             $user = $this->service->authenticateUser($postedUser);
 
-            $tokenResponse = $this->generateJwt($user);
+            $token = $this->service->generateJwt($user);
+
+            $tokenResponse = array(
+                "message" => 'Successful login',
+                "token" => $token
+            );
             $this->respondOk($tokenResponse);
         }
         catch (BadRequestException $e) {
@@ -33,7 +38,7 @@ class UserController extends Controller
             $this->respondWithError(401, $e->getMessage());
         }
         catch(Exception $e){
-            $this->respondWithError(500, "An unexpected error occurred.");
+            $this->respondWithError(500, $e);
             error_log("Login error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         }
     }
@@ -44,7 +49,12 @@ class UserController extends Controller
             $postedUser = $this->createObjectFromPostedJson("Models\\User");
 
             $createdUser = $this->service->registerUser($postedUser);
-            $tokenResponse = $this->generateJwt($createdUser);
+            $token = $this->service->generateJwt($createdUser);
+
+            $tokenResponse = array(
+                "message" => 'User registered successfully',
+                "token" => $token
+            );
 
             $this->respondOk($tokenResponse);
         }

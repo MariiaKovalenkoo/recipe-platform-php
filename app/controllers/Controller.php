@@ -8,19 +8,32 @@ use \Firebase\JWT\Key;
 
 class Controller
 {
+    function addTokenToResponse($data)
+    {
+        # if the JWT is not set, return the data as is
+        if (!isset($GLOBALS['jwt'])) {
+            return $data;
+        }
+
+        $data['token'] = $GLOBALS['jwt'];
+        return $data;
+    }
 
     function respondOk($data)
     {
+        $data = $this->addTokenToResponse($data);
         $this->respondWithCode(200, $data);
     }
 
     function respondCreated($data)
     {
+        $data = $this->addTokenToResponse($data);
         $this->respondWithCode(201, $data);
     }
 
     function respondAccepted($data)
     {
+        $data = $this->addTokenToResponse($data);
         $this->respondWithCode(202, $data);
     }
 
@@ -32,6 +45,7 @@ class Controller
     function respondWithError($httpcode, $message)
     {
         $data = array('message' => $message);
+        $data = $this->addTokenToResponse($data);
         $this->respondWithCode($httpcode, $data);
     }
 
@@ -39,6 +53,7 @@ class Controller
     {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code($httpcode);
+        $data = $this->addTokenToResponse($data);
         echo json_encode($data);
     }
 
@@ -46,6 +61,7 @@ class Controller
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json);
+        $data = $this->addTokenToResponse($data);
 
         $object = new $className();
         foreach ($data as $key => $value) {
@@ -58,28 +74,5 @@ class Controller
             }
         }
         return $object;
-    }
-
-    function generateJwt($user)
-    {
-        $currentTime = time();
-        $payload = array(
-            "iss" => "localhost",
-            "aud" => "localhost",
-            "iat" => $currentTime,
-            "nbf" => $currentTime, // Or $currentTime + a shorter interval if necessary
-            "exp" => $currentTime + 3600, // Reducing to 1 hour for better security
-            "data" => array(
-                "id" => $user->getId(),
-                "email" => $user->getEmail(),
-                "role" => $user->getIsAdmin() ? "admin" : "user",
-            )
-        );
-        $jwt = JWT::encode($payload, "secret_key", 'HS256');
-        return array(
-            "message" => 'Successful login',
-            "token" => $jwt,
-            "expiresAt" => $payload['exp']
-        );
     }
 }
