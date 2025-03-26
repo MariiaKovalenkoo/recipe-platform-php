@@ -64,8 +64,9 @@ function checkJwtMiddleware(): void
             exit;
         }
 
+        $newJWTdecoded = JWT::decode($newJWT, new Key($secret_key, 'HS256'));
+        $GLOBALS['current_user'] = (object) $newJWTdecoded->data;
         $GLOBALS['jwt'] = $newJWT;
-
     } catch (Exception $e) {
         error_log("JWT Middleware Error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         http_response_code(401);

@@ -119,7 +119,7 @@ class UserService {
             $user = $this->repository->getUserById($userId);
 
             if ($refreshToken !== $user->getRefreshToken()) {
-                error_log("Refresh Token Error: Invalid refresh token", 3, __DIR__ . '/../error_log.log');
+                error_log("Refresh Token Error: " . $refreshToken . "Invalid refresh token " . $user->getRefreshToken() , 3, __DIR__ . '/../error_log.log');
                 http_response_code(401);
                 echo json_encode(array("message" => "Access denied. Invalid refresh token."));
                 exit;

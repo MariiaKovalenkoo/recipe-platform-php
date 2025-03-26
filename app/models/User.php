@@ -9,7 +9,7 @@ class User implements \JsonSerializable{
     private string $lastName;
     private string $email;
     private bool $isAdmin;
-    private string $refreshToken;
+    private ?string $refreshToken;
 
     public function getId(): int {
         return $this->id;
