@@ -57,19 +57,29 @@ class FavoriteRecipe implements \JsonSerializable
         $this->recipe = $recipe;
     }
 
-    public function setAddedAt(DateTime $addedAt): void
+    public function setAddedAt(DateTime|string $addedAt): void
     {
+        if (is_string($addedAt)) {
+            $addedAt = new DateTime($addedAt);
+        }
         $this->addedAt = $addedAt;
     }
 
     public function jsonSerialize(): array
     {
         return [
-            'id' => $this->id,
+            'favoriteId' => $this->id,
+            'id' => $this->recipeId,
             'userId' => $this->userId,
-            'recipeId' => $this->recipeId,
-            'recipe' => $this->recipe,
-            'addedAt' => $this->addedAt
+            'name' => $this->recipe->getName(),
+            'mealType' => $this->recipe->getMealType(),
+            'dietaryPreference' => $this->recipe->getDietaryPreference(),
+            'cuisineType' => $this->recipe->getCuisineType(),
+            'description' => $this->recipe->getDescription(),
+            'ingredients' => $this->recipe->getIngredients(),
+            'instructions' => $this->recipe->getInstructions(),
+            "image" => 'data:image/jpeg;base64,' . $this->recipe->encodeImageToBase64($this->recipe->getImgPath()),
+            'status' => $this->recipe->getStatus(),
         ];
     }
 }

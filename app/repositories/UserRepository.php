@@ -20,7 +20,7 @@ class UserRepository extends Repository
             $user = $stmt->fetch();
 
             return $user ?: null;
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
         } catch (Exception $e) {
@@ -53,7 +53,7 @@ class UserRepository extends Repository
             $user->setId((int)$this->connection->lastInsertId());
             return $user;
 
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
         } catch (Exception $e) {
@@ -72,7 +72,7 @@ class UserRepository extends Repository
             $user = $stmt->fetch();
 
             return $user ?: null;
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
         } catch (Exception $e) {
@@ -84,9 +84,7 @@ class UserRepository extends Repository
     {
         try {
             $stmt = $this->connection->prepare("UPDATE User SET refreshToken = :refreshToken WHERE id = :userId");
-
             $userId = $user->getId();
-
             $stmt->bindParam(':refreshToken', $refreshToken);
             $stmt->bindParam(':userId', $userId);
             return $stmt->execute();

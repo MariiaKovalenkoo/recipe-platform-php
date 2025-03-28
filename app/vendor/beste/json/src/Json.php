@@ -17,8 +17,6 @@ final class Json
     private const DECODE_DEFAULT = JSON_BIGINT_AS_STRING;
 
     /**
-     * param non-empty-string $json
-     *
      * @throws UnexpectedValueException
      */
     public static function decode(string $json, ?bool $forceArray = null): mixed
@@ -38,7 +36,7 @@ final class Json
      *
      * @throws UnexpectedValueException
      */
-    public static function decodeFile(string $path, bool $forceArray = null): mixed
+    public static function decodeFile(string $path, ?bool $forceArray = null): mixed
     {
         if (!is_readable($path)) {
             throw new UnexpectedValueException("The file at '$path' is not readable");

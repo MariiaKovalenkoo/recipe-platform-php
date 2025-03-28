@@ -1,7 +1,9 @@
 <?php
+
 namespace Models;
 
-class User implements \JsonSerializable{
+class User implements \JsonSerializable
+{
 
     private int $id;
     private string $password;
@@ -11,67 +13,83 @@ class User implements \JsonSerializable{
     private bool $isAdmin;
     private ?string $refreshToken;
 
-    public function getId(): int {
+    public function getId(): int
+    {
         return $this->id;
     }
 
-    public function setId(int $id): void {
+    public function setId(int $id): void
+    {
         $this->id = $id;
     }
 
-    public function getFullName(): string {
+    public function getFullName(): string
+    {
         return $this->firstName . ' ' . $this->lastName;
     }
 
-    public function getPassword(): string {
+    public function getPassword(): string
+    {
         return $this->password;
     }
 
-    public function setPassword(string $password): void {
+    public function setPassword(string $password): void
+    {
         $this->password = $password;
     }
 
-    public function getFirstName(): string {
+    public function getFirstName(): string
+    {
         return $this->firstName;
     }
 
-    public function getRefreshToken(): string {
+    public function getRefreshToken(): string
+    {
         return $this->refreshToken;
     }
 
-    public function setFirstName(string $firstName): void {
+    public function setFirstName(string $firstName): void
+    {
         $this->firstName = $firstName;
     }
 
-    public function getLastName(): string {
+    public function getLastName(): string
+    {
         return $this->lastName;
     }
 
-    public function setLastName(string $lastName): void {
+    public function setLastName(string $lastName): void
+    {
         $this->lastName = $lastName;
     }
 
-    public function getEmail(): string {
+    public function getEmail(): string
+    {
         return $this->email;
     }
 
-    public function setEmail(string $email): void {
+    public function setEmail(string $email): void
+    {
         $this->email = $email;
     }
 
-    public function getIsAdmin(): bool {
+    public function getIsAdmin(): bool
+    {
         return $this->isAdmin;
     }
 
-    public function setIsAdmin(bool $isAdmin): void {
+    public function setIsAdmin(bool $isAdmin): void
+    {
         $this->isAdmin = $isAdmin;
     }
 
-    public function setRefreshToken(string $refreshToken): void {
+    public function setRefreshToken(string $refreshToken): void
+    {
         $this->refreshToken = $refreshToken;
     }
 
-    public function jsonSerialize(): array {
+    public function jsonSerialize(): array
+    {
         return [
             'id' => $this->id,
             'firstName' => $this->firstName,

@@ -6,9 +6,11 @@ use Models\enums\ApprovalStatus;
 use Models\enums\CuisineType;
 use Models\enums\DietaryPreference;
 use Models\enums\MealType;
+use Models\Recipe;
 use Services\exceptions\AccessDeniedException;
 use Services\exceptions\BadRequestException;
 use Services\exceptions\NotFoundException;
+use Services\ImageService;
 use Services\RecipeService;
 use Exception;
 
@@ -61,8 +63,7 @@ class RecipeController extends Controller
             $result = $this->service->getUserRecipes($userId, $page, $limit, $status, $mealType, $cuisineType, $dietaryPreference);
 
             $this->respondOk($result);
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -71,8 +72,6 @@ class RecipeController extends Controller
     public function getAllRecipes(): void
     {
         try {
-            error_log("Current User: " . print_r($GLOBALS['current_user'], true), 3, __DIR__ . '/../error_log.log');
-
             if (!isset($GLOBALS['current_user'])) {
                 $this->respondWithError(401, "Unauthorized: User not authenticated.");
                 return;
@@ -92,8 +91,7 @@ class RecipeController extends Controller
 
             $result = $this->service->getAllRecipes($page, $limit, $status, $mealType, $cuisineType, $dietaryPreference);
             $this->respondOk($result);
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -109,14 +107,11 @@ class RecipeController extends Controller
             $recipe = $this->service->getRecipeById($id, $GLOBALS['current_user']->id, $GLOBALS['current_user']->role);
 
             $this->respondOk($recipe);
-        }
-        catch (NotFoundException $e) {
+        } catch (NotFoundException $e) {
             $this->respondWithError(404, $e->getMessage());
-        }
-        catch (AccessDeniedException $e) {
+        } catch (AccessDeniedException $e) {
             $this->respondWithError(403, $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
@@ -130,61 +125,54 @@ class RecipeController extends Controller
                 return;
             }
 
-            $postedRecipe = $this->createObjectFromPostedJson("Models\\Recipe");
-            $postedRecipe->setUserId($GLOBALS['current_user']->id);
+            $recipeId = $this->service->CreateRecipe($_POST, $_FILES, $GLOBALS['current_user']);
 
-            $recipeId = $this->service->createRecipe($postedRecipe, $GLOBALS['current_user']->role);
             $this->respondCreated([
                 "message" => "Recipe created successfully",
                 "id" => $recipeId
             ]);
-        }
-        catch (BadRequestException $e) {
+        } catch (BadRequestException $e) {
             $this->respondWithError(400, $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
 
     // Update a recipe
-    public function updateRecipe($id): void
+    public function updateRecipe(int $id): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
-                $this->respondWithError(401, "Unauthorized.");
+                $this->respondWithError(401, "Unauthorized. Please log in to update a recipe.");
                 return;
             }
 
-            $postedRecipe = $this->createObjectFromPostedJson("Models\\Recipe");
-            $postedRecipe->setId($id);
+            $postData = $_POST;
+            $fileData = $_FILES;
+            $currentUser = $GLOBALS['current_user'];
+            $success = $this->service->updateRecipe($id, $postData, $fileData, (int)$currentUser->id, $currentUser->role);
 
-            if($this->service->updateRecipe($postedRecipe, $GLOBALS['current_user']->id, $GLOBALS['current_user']->role))
-            {
+            if ($success)
                 $this->respondOk([
                     "message" => "Recipe updated successfully",
-                    "id" => $id
                 ]);
-            } else {
+            else {
                 $this->respondWithError(500, "Failed to update recipe.");
             }
-        }
-        catch (NotFoundException $e) {
+
+        } catch (NotFoundException $e) {
             $this->respondWithError(404, $e->getMessage());
-        }
-        catch (AccessDeniedException $e) {
+        } catch (AccessDeniedException $e) {
             $this->respondWithError(403, $e->getMessage());
-        }
-        catch (BadRequestException $e) {
+        } catch (BadRequestException $e) {
             $this->respondWithError(400, $e->getMessage());
-        }
-        catch (Exception $e) {
-            $this->respondWithError(500, $e->getMessage());
+        } catch (Exception $e) {
+            $this->respondWithError(500, "An unexpected error occurred while updating the recipe. " . $e->getMessage());
         }
     }
 
     // Delete a recipe
-    public function deleteRecipe($id): void
+    public function deleteRecipe(int $id): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
@@ -192,69 +180,52 @@ class RecipeController extends Controller
                 return;
             }
 
-            if($this->service->deleteRecipe($id, $GLOBALS['current_user']->id, $GLOBALS['current_user']->role))
-                $this->respondNoContent(["message" => "Recipe deleted successfully"]);
+            if ($this->service->deleteRecipe($id, $GLOBALS['current_user']->id, $GLOBALS['current_user']->role))
+                $this->respondOk(["message" => "Recipe deleted successfully"]);
             else
                 $this->respondWithError(500, "Failed to delete recipe.");
-        }
-        catch (NotFoundException $e) {
+        } catch (NotFoundException $e) {
             $this->respondWithError(404, $e->getMessage());
-        }
-        catch (AccessDeniedException $e) {
+        } catch (AccessDeniedException $e) {
             $this->respondWithError(403, $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
 
-    // Approve a recipe (Admin only)
-    public function approveRecipe($id): void
+    // Approve/reject a recipe (Admin only)
+    public function updateStatus($id): void
     {
         try {
             if (!isset($GLOBALS['current_user'])) {
                 $this->respondWithError(401, "Unauthorized. Please log in.");
                 return;
             }
-            if (!$GLOBALS['current_user'] || $GLOBALS['current_user']->role !== 'admin') {
+
+            if ($GLOBALS['current_user']->role !== 'admin') {
                 $this->respondWithError(403, "Unauthorized. Admin access required.");
                 return;
             }
 
-            $this->service->approveRecipe($id);
-            $this->respondOk(["message" => "Recipe approved successfully."]);
-        }
-        catch (NotFoundException $e) {
+            $input = json_decode(file_get_contents("php://input"), true);
+            $status = $input['status'] ?? null;
+
+            if (!in_array($status, ['Approved', 'Rejected'])) {
+                $this->respondWithError(400, "Invalid status value. Must be 'Approved' or 'Rejected'.");
+                return;
+            }
+
+            $this->service->updateRecipeStatus((int)$id, $status);
+
+            $this->respondOk(["message" => "Recipe status updated to {$status}."]);
+
+        } catch (NotFoundException $e) {
             $this->respondWithError(404, $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
     }
 
-    // Reject a recipe (Admin only)
-    public function rejectRecipe($id): void
-    {
-        try {
-            if (!isset($GLOBALS['current_user'])) {
-                $this->respondWithError(401, "Unauthorized. Please log in.");
-                return;
-            }
-            if (!$GLOBALS['current_user'] || $GLOBALS['current_user']->role !== 'admin') {
-                $this->respondWithError(403, "Unauthorized. Admin access required.");
-                return;
-            }
-
-            $this->service->rejectRecipe($id);
-            $this->respondOk(["message" => "Recipe rejected successfully."]);
-        }
-        catch (NotFoundException $e) {
-            $this->respondWithError(404, $e->getMessage());
-        }
-        catch (Exception $e) {
-            $this->respondWithError(500, $e->getMessage());
-        }
-    }
 
     public function getFilters(): void
     {
@@ -270,8 +241,7 @@ class RecipeController extends Controller
                 'cuisineTypes' => $cuisineTypes,
                 'status' => $status,
             ]);
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
             error_log("Error fetching filters: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         }

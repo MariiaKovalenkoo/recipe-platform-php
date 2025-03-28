@@ -22,7 +22,7 @@ services:
             MYSQL_PASSWORD: 'secret123'
             MYSQL_DATABASE: 'developmentdb'
         volumes:
-            - mysqldata:/var/lib/mysql
+            - mashamysqldata:/var/lib/mysql
             - ./sql:/docker-entrypoint-initdb.d
         ports:
             - 3306:3306
@@ -34,4 +34,4 @@ services:
             - PMA_HOST=mysql
         restart: unless-stopped
 volumes:
-    mysqldata: {}
+    mashamysqldata: {}

@@ -15,31 +15,28 @@ class Controller
             return $data;
         }
 
-        $data['token'] = $GLOBALS['jwt'];
-        return $data;
+        if (is_array($data)) {
+            $data['token'] = $GLOBALS['jwt'];
+            return $data;
+        }
+
+        if (is_object($data)) {
+            $arr = json_decode(json_encode($data), true);
+            $arr['token'] = $GLOBALS['jwt'];
+            return $arr;
+        }
+
+        return ['data' => $data, 'token' => $GLOBALS['jwt']];
     }
 
     function respondOk($data)
     {
-        $data = $this->addTokenToResponse($data);
         $this->respondWithCode(200, $data);
     }
 
     function respondCreated($data)
     {
-        $data = $this->addTokenToResponse($data);
         $this->respondWithCode(201, $data);
-    }
-
-    function respondAccepted($data)
-    {
-        $data = $this->addTokenToResponse($data);
-        $this->respondWithCode(202, $data);
-    }
-
-    function respondNoContent()
-    {
-        $this->respondWithCode(204, null);
     }
 
     function respondWithError($httpcode, $message)
@@ -61,8 +58,6 @@ class Controller
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json);
-        $data = $this->addTokenToResponse($data);
-
         $object = new $className();
         foreach ($data as $key => $value) {
             if (is_object($value)) {
@@ -74,5 +69,18 @@ class Controller
             }
         }
         return $object;
+    }
+
+    protected function getCurrentUserId()
+    {
+        if (!isset($GLOBALS['current_user'])) {
+            $this->respondWithError(401, "Unauthorized: Please log in.");
+        }
+        return $GLOBALS['current_user']->id;
+    }
+
+    protected function getJsonData()
+    {
+        return json_decode(file_get_contents("php://input"), true);
     }
 }

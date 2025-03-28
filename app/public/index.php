@@ -28,15 +28,18 @@ $router->before('GET|POST|PUT|DELETE', '/recipes.*', 'checkJwtMiddleware');
 $router->get('/recipes/mine', 'RecipeController@getUserRecipes'); // get user recipes
 $router->get('/recipes/{id}', 'RecipeController@getRecipeById'); // view a single recipe
 $router->post('/recipes', 'RecipeController@createRecipe'); // Create a recipe
-$router->put('/recipes/{id}', 'RecipeController@updateRecipe'); // Update a recipe
+$router->post('/recipes/{id}', 'RecipeController@updateRecipe'); // Update a recipe
 $router->delete('/recipes/{id}', 'RecipeController@deleteRecipe'); // Delete a recipe
 
+$router->before('GET|POST|DELETE', '/favorites.*', 'checkJwtMiddleware');
+$router->get('/favorites/(\d+)', 'FavoriteController@isFavorite');
+$router->post('/favorites', 'FavoriteController@addFavorite');
+$router->delete('/favorites/{id}', 'FavoriteController@removeFavorite');
+$router->get('/favorites', 'FavoriteController@getUserFavorites');
 
 // admin routes (require authentication)
 $router->before('GET|PUT|POST|DELETE', '/admin/recipes.*', 'checkJwtMiddleware');
 $router->get('/admin/recipes', 'RecipeController@getAllRecipes');
-$router->put('/admin/recipes/(\d+)/approve', 'RecipeController@approveRecipe');
-$router->put('/admin/recipes/(\d+)/reject', 'RecipeController@rejectRecipe');
-
+$router->put('/admin/recipes/(\d+)/status', 'RecipeController@updateStatus');
 
 $router->run();

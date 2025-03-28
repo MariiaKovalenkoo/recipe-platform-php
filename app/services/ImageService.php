@@ -10,26 +10,26 @@ class ImageService
     {
         $validTypes = ['image/jpeg', 'image/png'];
         $imgDir = '/img/recipes/';
-        $uploadDir = $_SERVER['DOCUMENT_ROOT'].$imgDir;
+        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . $imgDir;
 
-        if (! in_array($image['type'], $validTypes)) {
+        if (!in_array($image['type'], $validTypes)) {
             throw new Exception('Invalid file type. Only JPEG and PNG are allowed.');
         }
 
         $fileExtension = pathinfo($image['name'], PATHINFO_EXTENSION);
-        $fileName = uniqid().'.'.$fileExtension; // Generate unique filename
-        $uploadPath = $uploadDir.$fileName;
+        $fileName = uniqid() . '.' . $fileExtension; // Generate unique filename
+        $uploadPath = $uploadDir . $fileName;
 
-        if (! move_uploaded_file($image['tmp_name'], $uploadPath)) {
+        if (!move_uploaded_file($image['tmp_name'], $uploadPath)) {
             throw new Exception('Error uploading file.');
         } else {
-            return $imgDir.$fileName;
+            return $imgDir . $fileName;
         }
     }
 
     public function deleteImage(string $imgPath): void
     {
-        if (! empty($imgPath)) {
+        if (!empty($imgPath)) {
             $imagePath = $_SERVER['DOCUMENT_ROOT'] . $imgPath;
             if (file_exists($imagePath)) {
                 unlink($imagePath);

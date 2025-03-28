@@ -1,4 +1,5 @@
 <?php
+
 namespace Services;
 
 use Exception;
@@ -8,7 +9,8 @@ use Repositories\UserRepository;
 use Services\exceptions\BadRequestException;
 use Services\exceptions\UnauthorizedException;
 
-class UserService {
+class UserService
+{
 
     private $repository;
 
@@ -93,7 +95,7 @@ class UserService {
         $result = $this->repository->updateRefreshToken($user, $refreshToken);
 
         if (!$result) {
-            return false;
+            throw new Exception("An error occurred while updating token in the database.");
         }
 
         $currentTime = time();
@@ -101,8 +103,8 @@ class UserService {
             "iss" => "localhost",
             "aud" => "localhost",
             "iat" => $currentTime,
-            "nbf" => $currentTime, // Or $currentTime + a shorter interval if necessary
-            "exp" => $currentTime + 10, // Reducing to 1 hour for better security
+            "nbf" => $currentTime,
+            "exp" => $currentTime + 20,
             "data" => array(
                 "id" => $user->getId(),
                 "email" => $user->getEmail(),
@@ -119,18 +121,13 @@ class UserService {
             $user = $this->repository->getUserById($userId);
 
             if ($refreshToken !== $user->getRefreshToken()) {
-                error_log("Refresh Token Error: " . $refreshToken . "Invalid refresh token " . $user->getRefreshToken() , 3, __DIR__ . '/../error_log.log');
-                http_response_code(401);
-                echo json_encode(array("message" => "Access denied. Invalid refresh token."));
-                exit;
+                error_log("Tokens don't match. Refresh Token is: " . $refreshToken . " Refresh token from db: " . $user->getRefreshToken() . "\n", 3, __DIR__ . '/../error_log.log');
+                throw new UnauthorizedException("Invalid refresh token. Tokens don't match.");
             }
-
             return $this->generateJwt($user);
         } catch (Exception $e) {
             error_log("Refresh Token Error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
-            http_response_code(401);
-            echo json_encode(array("message" => "Access denied. " . $e->getMessage()));
-            exit;
+            throw new UnauthorizedException("An error occurred while refreshing the token. ");
         }
     }
 }

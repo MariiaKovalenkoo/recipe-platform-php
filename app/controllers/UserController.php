@@ -30,14 +30,11 @@ class UserController extends Controller
                 "token" => $token
             );
             $this->respondOk($tokenResponse);
-        }
-        catch (BadRequestException $e) {
+        } catch (BadRequestException $e) {
             $this->respondWithError(400, $e->getMessage());
-        }
-        catch (UnauthorizedException $e) {
+        } catch (UnauthorizedException $e) {
             $this->respondWithError(401, $e->getMessage());
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             $this->respondWithError(500, $e);
             error_log("Login error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         }
@@ -57,12 +54,10 @@ class UserController extends Controller
             );
 
             $this->respondOk($tokenResponse);
-        }
-        catch (BadRequestException $e) {
+        } catch (BadRequestException $e) {
             $this->respondWithError(400, $e->getMessage());
-        }
-        catch (Exception $e) {
-            $this->respondWithError(500,"An unexpected error occurred.");
+        } catch (Exception $e) {
+            $this->respondWithError(500, "An unexpected error occurred.");
             error_log("Register error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
         }
     }

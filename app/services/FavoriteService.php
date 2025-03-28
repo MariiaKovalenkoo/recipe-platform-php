@@ -2,7 +2,9 @@
 
 namespace Services;
 
+use Exception;
 use Repositories\FavoriteRepository;
+use Services\exceptions\NotFoundException;
 
 class FavoriteService
 {
@@ -15,16 +17,16 @@ class FavoriteService
 
     public function addFavorite($userId, $recipeId): bool
     {
-        if($this->favoriteRepository->isFavorite($userId, $recipeId)) {
-            return false;
+        if ($this->favoriteRepository->isFavorite($userId, $recipeId)) {
+            throw new Exception("Recipe is already in favorites.");
         }
         return $this->favoriteRepository->addFavorite($userId, $recipeId);
     }
 
     public function removeFavorite($userId, $recipeId): bool
     {
-        if(!$this->favoriteRepository->isFavorite($userId, $recipeId)) {
-            return false;
+        if (!$this->favoriteRepository->isFavorite($userId, $recipeId)) {
+            throw new NotFoundException("Recipe is not in favorites.");
         }
         return $this->favoriteRepository->removeFavorite($userId, $recipeId);
     }
@@ -34,8 +36,9 @@ class FavoriteService
         return $this->favoriteRepository->isFavorite($userId, $recipeId);
     }
 
-    public function getFavoritesByUser($userId): array
+    public function getUserFavorites(int $userId, int $page, int $limit): array
     {
-        return $this->favoriteRepository->getFavoritesByUser($userId);
+        $offset = ($page - 1) * $limit;
+        return $this->favoriteRepository->getUserFavorites($userId, $offset, $limit);
     }
 }

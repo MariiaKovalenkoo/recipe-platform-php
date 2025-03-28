@@ -8,8 +8,9 @@ use Models\enums\DietaryPreference;
 use Models\enums\MealType;
 use JsonSerializable;
 
-class Recipe implements JsonSerializable{
-    private int $id ;
+class Recipe implements JsonSerializable
+{
+    private int $id;
     private int $userId;
     private string $name;
     private MealType $mealType;
@@ -18,66 +19,81 @@ class Recipe implements JsonSerializable{
     private string $description;
     private string $ingredients;
     private string $instructions;
-    private string $imgPath;
+    private ?string $imgPath = null;
     private ApprovalStatus $status;
 
-    public function getImgPath(): string {
+    public function getImgPath(): ?string
+    {
         return $this->imgPath;
     }
 
-    public function setImgPath(string $imgPath): void {
+    public function setImgPath(?string $imgPath): void
+    {
         $this->imgPath = $imgPath;
     }
 
-    public function getId(): int {
+    public function getId(): int
+    {
         return $this->id;
     }
 
-    public function setId(int $id): void {
+    public function setId(int $id): void
+    {
         $this->id = $id;
     }
 
-    public function getUserId(): int {
+    public function getUserId(): int
+    {
         return $this->userId;
     }
 
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function getDescription(): string {
+    public function getDescription(): string
+    {
         return $this->description;
     }
 
-    public function getIngredients(): string {
+    public function getIngredients(): string
+    {
         return $this->ingredients;
     }
 
-    public function getInstructions(): string {
+    public function getInstructions(): string
+    {
         return $this->instructions;
     }
 
-    public function getMealType(): MealType {
+    public function getMealType(): MealType
+    {
         return $this->mealType;
     }
 
-    public function getDietaryPreference(): DietaryPreference {
+    public function getDietaryPreference(): DietaryPreference
+    {
         return $this->dietaryPreference;
     }
 
-    public function getCuisineType(): CuisineType {
+    public function getCuisineType(): CuisineType
+    {
         return $this->cuisineType;
     }
 
-    public function setMealType(string $mealType): void {
+    public function setMealType(string $mealType): void
+    {
         $this->mealType = MealType::from($mealType);
     }
 
-    public function setDietaryPreference(?string $preference): void {
+    public function setDietaryPreference(?string $preference): void
+    {
         $this->dietaryPreference = DietaryPreference::from($preference ?: DietaryPreference::NOT_SPECIFIED->value);
     }
 
-    public function setCuisineType(?string $cuisine): void {
+    public function setCuisineType(?string $cuisine): void
+    {
         $this->cuisineType = CuisineType::from($cuisine ?: CuisineType::NOT_SPECIFIED->value);
     }
 
@@ -106,23 +122,40 @@ class Recipe implements JsonSerializable{
         $this->userId = $userId;
     }
 
-    public function getStatus(): ApprovalStatus {
+    public function getStatus(): ApprovalStatus
+    {
         return $this->status;
     }
 
-    public function setStatus(string $status): void {
+    public function setStatus(string $status): void
+    {
         $this->status = ApprovalStatus::from($status);
     }
-    private function encodeImageToBase64($imagePath): string
+
+    private ?bool $isFavorite = null;
+
+    public function setIsFavorite(bool $isFavorite): void
     {
-        $imagePath =  __DIR__ . '/../public/' . $imagePath;
+        $this->isFavorite = $isFavorite;
+    }
+
+    public function encodeImageToBase64($imagePath): ?string
+    {
+        if ($imagePath === null) {
+            return null;
+        }
+        $imagePath = __DIR__ . '/../public/' . $imagePath;
+        if (!file_exists($imagePath)) {
+            error_log("Image not found " . $imagePath, 3, __DIR__ . '/../error_log.log');
+            return null;
+        }
         $imageData = file_get_contents($imagePath);
         return base64_encode($imageData);
     }
 
     public function jsonSerialize(): array
     {
-        return [
+        $data = [
             'id' => $this->id,
             'userId' => $this->userId,
             'name' => $this->name,
@@ -135,5 +168,10 @@ class Recipe implements JsonSerializable{
             "image" => 'data:image/jpeg;base64,' . $this->encodeImageToBase64($this->imgPath),
             'status' => $this->status
         ];
+
+        if (!is_null($this->isFavorite)) {
+            $data['isFavorite'] = $this->isFavorite;
+        }
+        return $data;
     }
 }

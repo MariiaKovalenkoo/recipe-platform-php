@@ -11,12 +11,13 @@ use PDOException;
 class RecipeRepository extends Repository
 {
     // get all/any recipes (for admin)
-    public function getAllRecipes(int $offset = 0, int $limit = 10, ?string $status = null, ?string $mealType = null, ?string $cuisineType = null, ?string $dietaryPreference = null): array {
-        return $this->getRecipes(null, $status, $mealType, $cuisineType, $dietaryPreference,  $offset, $limit);
+    public function getAllRecipes(int $offset = 0, int $limit = 10, ?string $status = null, ?string $mealType = null, ?string $cuisineType = null, ?string $dietaryPreference = null): array
+    {
+        return $this->getRecipes(null, $status, $mealType, $cuisineType, $dietaryPreference, $offset, $limit);
     }
 
     // get public recipes (approved only)
-    public function getPublicRecipes(int $offset = 0, int $limit = 10, string $status = null, ?string $mealType = null, ?string $cuisineType = null, ?string $dietaryPreference = null): array
+    public function getPublicRecipes(int $offset = 0, int $limit = 10, ?string $status = null, ?string $mealType = null, ?string $cuisineType = null, ?string $dietaryPreference = null): array
     {
         return $this->getRecipes(null, $status, $mealType, $cuisineType, $dietaryPreference, $offset, $limit);
     }
@@ -42,12 +43,10 @@ class RecipeRepository extends Repository
             }
 
             return $this->rowToRecipe($row);
-        }
-        catch (PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -72,14 +71,15 @@ class RecipeRepository extends Repository
 
     // helper function to get recipes based on parameters such as userId, status, mealType, cuisineType, dietaryPreference
     private function getRecipes(
-        ?int $userId = null,
+        ?int    $userId = null,
         ?string $status = null,
         ?string $mealType = null,
         ?string $cuisineType = null,
         ?string $dietaryPreference = null,
-        int $offset = 0,
-        int $limit = 10
-    ): array {  // Returns ['recipes' => [], 'total' => 0]
+        int     $offset = 0,
+        int     $limit = 10
+    ): array
+    {  // Returns ['recipes' => [], 'total' => 0]
         try {
             [$query, $countQuery, $params] = $this->buildQuery($userId, $status, $mealType, $cuisineType, $dietaryPreference);
 
@@ -93,7 +93,7 @@ class RecipeRepository extends Repository
 
 
             // Fetch recipes (with LIMIT/OFFSET)
-            $query .= " LIMIT :limit OFFSET :offset";
+            $query .= " ORDER BY name ASC LIMIT :limit OFFSET :offset";
             $params[':limit'] = [$limit, PDO::PARAM_INT];
             $params[':offset'] = [$offset, PDO::PARAM_INT];
 
@@ -125,12 +125,13 @@ class RecipeRepository extends Repository
 
     // helper function for building the query and pagination
     private function buildQuery(
-        ?int $userId = null,
+        ?int    $userId = null,
         ?string $status = null,
         ?string $mealType = null,
         ?string $cuisineType = null,
         ?string $dietaryPreference = null
-    ): array {  // Returns [query, params]
+    ): array
+    {  // Returns [query, params]
         $query = "SELECT * FROM Recipe WHERE 1=1";
         $countQuery = "SELECT COUNT(*) FROM Recipe WHERE 1=1";
         $params = [];
@@ -198,12 +199,10 @@ class RecipeRepository extends Repository
                 return null;
             }
             return (int)$this->connection->lastInsertId();
-        }
-        catch(PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -240,12 +239,10 @@ class RecipeRepository extends Repository
             $stmt->bindValue(':status', $status);
 
             return $stmt->execute();
-        }
-        catch(PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -255,13 +252,11 @@ class RecipeRepository extends Repository
         try {
             $stmt = $this->connection->prepare("DELETE FROM Recipe WHERE id = :id");
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            return $stmt->execute();
-        }
-        catch(PDOException $e) {
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -274,12 +269,10 @@ class RecipeRepository extends Repository
             $stmt->bindValue(':status', $status);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             return $stmt->execute();
-        }
-        catch(PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
