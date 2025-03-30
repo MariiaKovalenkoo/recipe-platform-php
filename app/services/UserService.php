@@ -112,7 +112,7 @@ class UserService
                 "refreshToken" => $refreshToken
             )
         );
-        return JWT::encode($payload, "secret_key", 'HS256');
+        return JWT::encode($payload, "ef74bf5bec8c73d9be269021af10dce5b4bbcf4921b98598b08359a77c19488c180ff000986791f3aed51c4bc1d60593516e8701066f5f41a90f6195c19f9a89", 'HS256');
     }
 
     function refreshJWT($userId, $refreshToken): string

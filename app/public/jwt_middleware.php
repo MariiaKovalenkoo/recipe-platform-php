@@ -20,7 +20,7 @@ function checkJwtMiddleware(): void
         sendErrorResponse("Access denied. Invalid token format.");
     }
 
-    $secret_key = "secret_key";
+    $secret_key = "ef74bf5bec8c73d9be269021af10dce5b4bbcf4921b98598b08359a77c19488c180ff000986791f3aed51c4bc1d60593516e8701066f5f41a90f6195c19f9a89";
 
     try {
         // Decode token
@@ -42,6 +42,16 @@ function checkJwtMiddleware(): void
     }
 }
 
+function checkAdminMiddleware(): void
+{
+    checkJwtMiddleware(); // Decode token first, store in $GLOBALS
+
+    if (empty($GLOBALS['current_user']) || $GLOBALS['current_user']->role !== 'admin') {
+        sendErrorResponse("Access denied. Admins only.", 403);
+    }
+}
+
+
 function renewToken(string $expiredJwt): void
 {
     try {
@@ -60,7 +70,7 @@ function renewToken(string $expiredJwt): void
         error_log("\nTOKEN REFRESHED" . "\n", 3, __DIR__ . '/../error_log.log');
 
         // Decode new JWT
-        $secret_key = "secret_key";
+        $secret_key = "ef74bf5bec8c73d9be269021af10dce5b4bbcf4921b98598b08359a77c19488c180ff000986791f3aed51c4bc1d60593516e8701066f5f41a90f6195c19f9a89";
         $newJWTdecoded = JWT::decode($newJWT, new Key($secret_key, 'HS256'));
 
         // Update global user data
