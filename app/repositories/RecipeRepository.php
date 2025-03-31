@@ -125,41 +125,31 @@ class RecipeRepository extends Repository
 
     // helper function for building the query and pagination
     private function buildQuery(
-        ?int    $userId = null,
+        ?int $userId = null,
         ?string $status = null,
         ?string $mealType = null,
         ?string $cuisineType = null,
         ?string $dietaryPreference = null
-    ): array
-    {  // Returns [query, params]
+    ): array {
         $query = "SELECT * FROM Recipe WHERE 1=1";
         $countQuery = "SELECT COUNT(*) FROM Recipe WHERE 1=1";
         $params = [];
 
-        if ($userId !== null) {
-            $query .= " AND userId = :userId";
-            $countQuery .= " AND userId = :userId";
-            $params[':userId'] = [$userId, PDO::PARAM_INT];
-        }
-        if ($status !== null) {
-            $query .= " AND status = :status";
-            $countQuery .= " AND status = :status";
-            $params[':status'] = [$status, PDO::PARAM_STR];
-        }
-        if ($mealType !== null) {
-            $query .= " AND mealType = :mealType";
-            $countQuery .= " AND mealType = :mealType";
-            $params[':mealType'] = [$mealType, PDO::PARAM_STR];
-        }
-        if ($cuisineType !== null) {
-            $query .= " AND cuisineType = :cuisineType";
-            $countQuery .= " AND cuisineType = :cuisineType";
-            $params[':cuisineType'] = [$cuisineType, PDO::PARAM_STR];
-        }
-        if ($dietaryPreference !== null) {
-            $query .= " AND dietaryPreference = :dietaryPreference";
-            $countQuery .= " AND dietaryPreference = :dietaryPreference";
-            $params[':dietaryPreference'] = [$dietaryPreference, PDO::PARAM_STR];
+        // Define filters and their values/types
+        $filters = [
+            'userId' => [$userId, PDO::PARAM_INT],
+            'status' => [$status, PDO::PARAM_STR],
+            'mealType' => [$mealType, PDO::PARAM_STR],
+            'cuisineType' => [$cuisineType, PDO::PARAM_STR],
+            'dietaryPreference' => [$dietaryPreference, PDO::PARAM_STR],
+        ];
+
+        foreach ($filters as $field => [$value, $type]) {
+            if ($value !== null) {
+                $query .= " AND {$field} = :{$field}";
+                $countQuery .= " AND {$field} = :{$field}";
+                $params[":{$field}"] = [$value, $type];
+            }
         }
 
         return [$query, $countQuery, $params];
@@ -169,82 +159,73 @@ class RecipeRepository extends Repository
     public function createRecipe(Recipe $recipe): ?int
     {
         try {
+            $fields = $this->extractRecipeFields($recipe);
+            $fields['userId'] = $recipe->getUserId();
+
+            $columns = implode(', ', array_keys($fields));
+            $placeholders = ':' . implode(', :', array_keys($fields));
+
             $stmt = $this->connection->prepare("
-                INSERT INTO Recipe (name, ingredients, instructions, imgPath, mealType, dietaryPreference, cuisineType, description, status, userId)
-                VALUES (:name, :ingredients, :instructions, :imgPath, :mealType, :dietaryPreference, :cuisineType, :description, :status, :userId)");
+            INSERT INTO Recipe ($columns)
+            VALUES ($placeholders)
+        ");
 
-            $name = $recipe->getName();
-            $ingredients = $recipe->getIngredients();
-            $instructions = $recipe->getInstructions();
-            $imgPath = $recipe->getImgPath();
-            $mealType = $recipe->getMealType()->value;
-            $dietaryPreference = $recipe->getDietaryPreference()->value;
-            $cuisineType = $recipe->getCuisineType()->value;
-            $description = $recipe->getDescription();
-            $status = $recipe->getStatus()->value;
-            $userId = $recipe->getUserId();
-
-            $stmt->bindValue(':name', $name);
-            $stmt->bindValue(':ingredients', $ingredients);
-            $stmt->bindValue(':instructions', $instructions);
-            $stmt->bindValue(':imgPath', $imgPath);
-            $stmt->bindValue(':mealType', $mealType);
-            $stmt->bindValue(':dietaryPreference', $dietaryPreference);
-            $stmt->bindValue(':cuisineType', $cuisineType);
-            $stmt->bindValue(':description', $description);
-            $stmt->bindValue(':status', $status);
-            $stmt->bindValue(':userId', $userId);
+            foreach ($fields as $key => $value) {
+                $stmt->bindValue(":$key", $value);
+            }
 
             if (!$stmt->execute()) {
                 return null;
             }
+
             return (int)$this->connection->lastInsertId();
+
         } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
-        } catch (Exception $e) {
-            throw $e;
         }
     }
 
     public function updateRecipe(Recipe $recipe): bool
     {
         try {
+            $fields = $this->extractRecipeFields($recipe);
+            $setParts = [];
+            foreach ($fields as $key => $value) {
+                $setParts[] = "$key = :$key";
+            }
+            $setClause = implode(', ', $setParts);
+
             $stmt = $this->connection->prepare("
-                UPDATE Recipe
-                SET name = :name, ingredients = :ingredients, instructions = :instructions, imgPath = :imgPath, 
-                mealType = :mealType, dietaryPreference = :dietaryPreference, cuisineType = :cuisineType, description = :description, status = :status
-                WHERE id = :id");
+            UPDATE Recipe SET $setClause WHERE id = :id
+        ");
 
-            $id = $recipe->getId();
-            $name = $recipe->getName();
-            $ingredients = $recipe->getIngredients();
-            $instructions = $recipe->getInstructions();
-            $imgPath = $recipe->getImgPath();
-            $mealType = $recipe->getMealType()->value;
-            $dietaryPreference = $recipe->getDietaryPreference()->value;
-            $cuisineType = $recipe->getCuisineType()->value;
-            $description = $recipe->getDescription();
-            $status = $recipe->getStatus()->value;
-
-            $stmt->bindValue(':id', $id);
-            $stmt->bindValue(':name', $name);
-            $stmt->bindValue(':ingredients', $ingredients);
-            $stmt->bindValue(':instructions', $instructions);
-            $stmt->bindValue(':imgPath', $imgPath);
-            $stmt->bindValue(':mealType', $mealType);
-            $stmt->bindValue(':dietaryPreference', $dietaryPreference);
-            $stmt->bindValue(':cuisineType', $cuisineType);
-            $stmt->bindValue(':description', $description);
-            $stmt->bindValue(':status', $status);
+            foreach ($fields as $key => $value) {
+                $stmt->bindValue(":$key", $value);
+            }
+            $stmt->bindValue(':id', $recipe->getId());
 
             return $stmt->execute();
+
         } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             throw new Exception("An error occurred while accessing the database: " . $e->getMessage());
-        } catch (Exception $e) {
-            throw $e;
         }
+    }
+
+    private function extractRecipeFields(Recipe $recipe): array
+    {
+        return [
+            'name' => $recipe->getName(),
+            'ingredients' => $recipe->getIngredients(),
+            'instructions' => $recipe->getInstructions(),
+            'imgPath' => $recipe->getImgPath(),
+            'mealType' => $recipe->getMealType()->value,
+            'dietaryPreference' => $recipe->getDietaryPreference()->value,
+            'cuisineType' => $recipe->getCuisineType()->value,
+            'description' => $recipe->getDescription(),
+            'status' => $recipe->getStatus()->value,
+        ];
     }
 
     public function deleteRecipe(int $id): bool

@@ -54,6 +54,11 @@ class Controller
         echo json_encode($data);
     }
 
+    protected function getJsonData()
+    {
+        return json_decode(file_get_contents("php://input"), true);
+    }
+
     function createObjectFromPostedJson($className)
     {
         $json = file_get_contents('php://input');
@@ -71,6 +76,14 @@ class Controller
         return $object;
     }
 
+    protected function getPostedFormAndFiles(): array
+    {
+        return [
+            'form' => $_POST,
+            'files' => $_FILES,
+        ];
+    }
+
     protected function getCurrentUserId()
     {
         if (!isset($GLOBALS['current_user'])) {
@@ -79,8 +92,11 @@ class Controller
         return $GLOBALS['current_user']->id;
     }
 
-    protected function getJsonData()
+    protected function getCurrentUserRole()
     {
-        return json_decode(file_get_contents("php://input"), true);
+        if (!isset($GLOBALS['current_user'])) {
+            $this->respondWithError(401, "Unauthorized: Please log in.");
+        }
+        return $GLOBALS['current_user']->role;
     }
 }

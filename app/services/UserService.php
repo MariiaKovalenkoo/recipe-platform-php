@@ -21,13 +21,7 @@ class UserService
 
     public function authenticateUser($postedUser): User
     {
-        if (empty($postedUser->getEmail())) {
-            throw new BadRequestException("Email is required.");
-        }
-
-        if (empty($postedUser->getPassword())) {
-            throw new BadRequestException("Password is required.");
-        }
+        $this->validateRequiredFields($postedUser, ['email', 'password']);
 
         $user = $this->repository->getUserByEmail($postedUser->getEmail());
         if (!$user)
@@ -42,15 +36,9 @@ class UserService
         return $user;
     }
 
-    public function registerUser(User $postedUser): ?User
+    public function registerUser(User $postedUser): User
     {
-        if (empty($postedUser->getEmail())) {
-            throw new BadRequestException("Email is required.");
-        }
-
-        if (empty($postedUser->getPassword())) {
-            throw new BadRequestException("Password is required.");
-        }
+        $this->validateRequiredFields($postedUser, ['email', 'password', 'firstName', 'lastName']);
 
         if ($this->repository->getUserByEmail($postedUser->getEmail())) {
             throw new BadRequestException("Email is already in use.");
@@ -58,14 +46,6 @@ class UserService
 
         if (strlen($postedUser->getPassword()) < 8) {
             throw new BadRequestException("Password must be at least 8 characters long.");
-        }
-
-        if (empty($postedUser->getFirstName())) {
-            throw new BadRequestException("First name is required.");
-        }
-
-        if (empty($postedUser->getLastName())) {
-            throw new BadRequestException("Last name is required.");
         }
 
         $hashedPassword = $this->hashPassword($postedUser->getPassword());
@@ -77,6 +57,21 @@ class UserService
             throw new Exception("An error occurred while registering the user.");
         }
         return $newUser;
+    }
+
+    private function validateRequiredFields(User $user, array $requiredFields): void
+    {
+        foreach ($requiredFields as $field) {
+            $getter = 'get' . ucfirst($field);
+            if (!method_exists($user, $getter)) {
+                throw new Exception("Invalid field: $field");
+            }
+
+            $value = $user->$getter();
+            if (empty($value)) {
+                throw new BadRequestException(ucfirst($field) . " is required.");
+            }
+        }
     }
 
     private function verifyPassword($input, $hash): bool

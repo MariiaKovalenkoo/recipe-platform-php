@@ -55,31 +55,35 @@ class RecipeService
         }
 
         $isFavorite = $this->favoriteService->isFavorite($userId, $id);
-
         $recipe->setIsFavorite($isFavorite);
 
         return $recipe;
     }
 
-    public function createRecipe(array $postData, array $fileData, object $currentUser): int
+    private function validateFields(Recipe $recipe, array $postData, string $userRole): void
     {
-        $recipe = new Recipe();
         $fields = [
-            'name' => 'Name',
-            'description' => 'Description',
-            'ingredients' => 'Ingredients',
-            'instructions' => 'Instructions',
-            'mealType' => 'Meal Type',
-            'cuisineType' => 'Cuisine Type',
-            'dietaryPreference' => 'Dietary Preference',
-            'status' => 'Status',
+            'name',
+            'description',
+            'ingredients',
+            'instructions',
+            'mealType',
+            'cuisineType',
+            'dietaryPreference',
+            'status',
         ];
 
-        foreach ($fields as $key => $label) {
+        foreach ($fields as $key) {
             $value = isset($postData[$key]) ? trim($postData[$key]) : '';
 
             if ($value === '') {
-                throw new BadRequestException("$label is required.");
+                throw new BadRequestException("$key is required.");
+            }
+
+            if ($key === 'status' && $userRole !== 'admin') {
+                $value = $value === ApprovalStatus::PRIVATE->value
+                    ? ApprovalStatus::PRIVATE->value
+                    : ApprovalStatus::PENDING->value;
             }
 
             $setter = 'set' . ucfirst($key);
@@ -87,10 +91,14 @@ class RecipeService
                 $recipe->$setter($value);
             }
         }
+    }
 
-        $recipe->setUserId((int)$currentUser->id);
+    public function createRecipe(array $postData, array $fileData, int $userId, string $userRole): int
+    {
+        $recipe = new Recipe();
+        $this->validateFields($recipe, $postData, $userRole);
+        $recipe->setUserId($userId);
 
-        // Handle image upload
         if (!isset($fileData['image']) || $fileData['image']['error'] !== UPLOAD_ERR_OK) {
             throw new BadRequestException("Recipe image is required and was not uploaded.");
         }
@@ -98,19 +106,11 @@ class RecipeService
         $imagePath = $this->imageService->uploadImage($fileData['image']);
         $recipe->setImgPath($imagePath);
 
-        // 2. recipe status check
-        // if not admin, status can be only private or pending
-        if ($currentUser->role !== 'admin') {
-            if ($recipe->getStatus() !== ApprovalStatus::PRIVATE) {
-                $recipe->setStatus(ApprovalStatus::PENDING->value);
-            }
-        }
-
-        // 3. create recipe
         $recipeId = $this->repository->createRecipe($recipe);
         if (!$recipeId) {
             throw new Exception("Failed to create recipe.");
         }
+
         return $recipeId;
     }
 
@@ -127,36 +127,10 @@ class RecipeService
         }
 
         $oldImagePath = $existingRecipe->getImgPath();
-        $newImagePath = null;
         $imageUpdated = false;
+        $newImagePath = null;
 
-        $fields = [
-            'name' => 'Name', 'description' => 'Description', 'ingredients' => 'Ingredients',
-            'instructions' => 'Instructions', 'mealType' => 'Meal Type', 'cuisineType' => 'Cuisine Type',
-            'dietaryPreference' => 'Dietary Preference', 'status' => 'Status',
-        ];
-
-        foreach ($fields as $key => $label) {
-            $value = isset($postData[$key]) ? trim($postData[$key]) : '';
-            if ($value === '') {
-                throw new BadRequestException("$label is required.");
-            }
-
-            if ($key === 'status') {
-                $newStatus = $value;
-                if ($role !== 'admin') {
-                    if ($newStatus !== ApprovalStatus::PRIVATE->value) {
-                        $newStatus = ApprovalStatus::PENDING->value;
-                    }
-                }
-                $existingRecipe->setStatus($newStatus);
-            }
-
-            $setter = 'set' . ucfirst($key);
-            if (method_exists($existingRecipe, $setter)) {
-                $existingRecipe->$setter($value);
-            }
-        }
+        $this->validateFields($existingRecipe, $postData, $role);
 
         if (isset($fileData['image']) && $fileData['image']['error'] === UPLOAD_ERR_OK) {
             try {
@@ -167,11 +141,10 @@ class RecipeService
                 throw new Exception("Failed to upload new image: " . $e->getMessage());
             }
         }
-        // If no new image was uploaded, $existingRecipe->getImgPath() still holds the old path.
+
         $success = $this->repository->updateRecipe($existingRecipe);
 
         if (!$success) {
-            // If DB update failed, and we uploaded a *new* image, we should delete it.
             if ($imageUpdated && $newImagePath) {
                 $this->imageService->deleteImage($newImagePath);
             }
@@ -212,6 +185,10 @@ class RecipeService
 
     public function updateRecipeStatus(int $id, string $status): bool
     {
+        if (!in_array($status, ['Approved', 'Rejected'])) {
+            throw new BadRequestException("Invalid status value. Must be 'Approved' or 'Rejected'.");
+        }
+
         $recipe = $this->repository->getRecipeById($id);
 
         if (!$recipe) {
