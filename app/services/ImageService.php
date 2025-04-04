@@ -3,6 +3,7 @@
 namespace Services;
 
 use Exception;
+use Throwable;
 
 class ImageService
 {
@@ -30,9 +31,13 @@ class ImageService
     public function deleteImage(string $imgPath): void
     {
         if (!empty($imgPath)) {
-            $imagePath = $_SERVER['DOCUMENT_ROOT'] . $imgPath;
-            if (file_exists($imagePath)) {
-                unlink($imagePath);
+            try {
+                $imagePath = $_SERVER['DOCUMENT_ROOT'] . $imgPath;
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+            } catch (Throwable $e) {
+                error_log('Error deleting image at ' . $imgPath . ': ' . $e->getMessage(), 3, __DIR__ . '/../error_log.log');
             }
         }
     }

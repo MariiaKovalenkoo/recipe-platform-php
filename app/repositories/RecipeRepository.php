@@ -231,8 +231,16 @@ class RecipeRepository extends Repository
     public function deleteRecipe(int $id): bool
     {
         try {
+            // Delete related favorites first
+            $deleteFavoritesStmt = $this->connection->prepare("DELETE FROM FavoriteRecipe WHERE recipeId = :id");
+            $deleteFavoritesStmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $deleteFavoritesStmt->execute();
+
+            // Then delete the recipe
             $stmt = $this->connection->prepare("DELETE FROM Recipe WHERE id = :id");
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
             return $stmt->rowCount() > 0;
         } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage(), 3, __DIR__ . '/../error_log.log');

@@ -7,8 +7,10 @@ use Services\UserService;
 
 function checkJwtMiddleware(): void
 {
+//    error_log("\ncheckJwtMiddleware called for URI: " . $_SERVER['REQUEST_URI'] . " METHOD: " . $_SERVER['REQUEST_METHOD'], 3, __DIR__ . '/../error_log.log');
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? null;
+//    error_log("\nAuth Header Present: " . ($authHeader ? 'Yes' : 'No'), 3, __DIR__ . '/../error_log.log');
 
     if (!$authHeader) {
         sendErrorResponse("Access denied. No token provided.");

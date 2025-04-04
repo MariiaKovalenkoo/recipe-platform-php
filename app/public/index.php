@@ -23,7 +23,7 @@ $router->get('/recipes/public', 'RecipeController@getPublicRecipes'); // get pub
 $router->get('/recipes/filters', 'RecipeController@getFilters'); // get recipe filters
 
 // recipe routes (require authentication)
-$router->before('GET|POST|PUT|DELETE', '/recipes/(?!public|filters).*', 'checkJwtMiddleware');
+$router->before('GET|POST|PUT|DELETE', '/recipes(?!/public|/filters)(/.*)?', 'checkJwtMiddleware');
 $router->get('/recipes/mine', 'RecipeController@getUserRecipes'); // get user recipes
 $router->get('/recipes/{id}', 'RecipeController@getRecipeById'); // view a single recipe
 $router->post('/recipes', 'RecipeController@createRecipe'); // Create a recipe
