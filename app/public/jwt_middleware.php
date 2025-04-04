@@ -69,7 +69,7 @@ function renewToken(string $expiredJwt): void
 
         $userService = new UserService();
         $newJWT = $userService->refreshJWT($userId, $refreshToken);
-        error_log("\nTOKEN REFRESHED" . "\n", 3, __DIR__ . '/../error_log.log');
+//        error_log("\nTOKEN REFRESHED" . "\n", 3, __DIR__ . '/../error_log.log');
 
         // Decode new JWT
         $secret_key = "ef74bf5bec8c73d9be269021af10dce5b4bbcf4921b98598b08359a77c19488c180ff000986791f3aed51c4bc1d60593516e8701066f5f41a90f6195c19f9a89";
