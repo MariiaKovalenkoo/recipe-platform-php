@@ -99,7 +99,7 @@ class UserService
             "aud" => "localhost",
             "iat" => $currentTime,
             "nbf" => $currentTime,
-            "exp" => $currentTime + 20,
+            "exp" => $currentTime + 900,
             "data" => array(
                 "id" => $user->getId(),
                 "email" => $user->getEmail(),

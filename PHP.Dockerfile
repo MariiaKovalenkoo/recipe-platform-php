@@ -12,3 +12,7 @@ RUN pecl install xdebug && docker-php-ext-enable xdebug
 
 # Copy Xdebug configuration
 COPY ./xdebug.ini "${PHP_INI_DIR}/conf.d"
+
+# Set PHP upload limits
+RUN echo "upload_max_filesize = 10M" > /usr/local/etc/php/conf.d/uploads.ini && \
+    echo "post_max_size = 12M" >> /usr/local/etc/php/conf.d/uploads.ini
